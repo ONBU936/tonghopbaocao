@@ -154,48 +154,56 @@ QUY TẮC BẮT BUỘC:
 
         // --- COMPONENTS GIAO DIỆN ---
 
-        const Header = ({ syncStatus, onOpenSyncModal, role, setRole, onRefresh }) => {
+        const Header = ({ syncStatus, onOpenSyncModal, role, setRole, onRefresh, onToggleMenu }) => {
             const isAdmin = role === 'ADMIN';
 
             return (
-                <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center border-b-4 border-beu-teal1 shrink-0 z-10 print-hidden">
-                    <div className="flex items-center gap-3">
-                        <img src="logo.png" alt="Logo HỌC VIỆN ÔN NGỌC BeU" className="h-10 w-auto object-contain" />
+                <header className="bg-white shadow-sm px-3 md:px-6 py-3 flex flex-wrap justify-between items-center border-b-4 border-beu-teal1 shrink-0 z-10 print-hidden gap-y-3">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        {/* Nút mở Menu trên Mobile */}
+                        <button onClick={onToggleMenu} className="md:hidden text-beu-purple1 text-2xl p-1 focus:outline-none bg-gray-100 rounded-md">
+                            <i className="ph-bold ph-list"></i>
+                        </button>
+                        
+                        <img src="logo.png" alt="Logo HỌC VIỆN ÔN NGỌC BeU" className="h-8 md:h-10 w-auto object-contain" />
                         <div>
-                            <h1 className="text-xl font-bold text-beu-purple1 tracking-wide">HỌC VIỆN ÔN NGỌC BeU</h1>
-                            <p className="text-sm text-gray-500 flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className="text-base md:text-xl font-bold text-beu-purple1 tracking-wide line-clamp-1">HỌC VIỆN ÔN NGỌC BeU</h1>
+                                {/* Status hiện ngay dưới tên trên màn nhỏ, hoặc kế bên trên màn to */}
+                                {syncStatus === 'synced' && <span className="flex items-center gap-1 text-[10px] md:text-xs text-green-600 bg-green-50 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap"><i className="ph-fill ph-check-circle"></i> Đã đồng bộ</span>}
+                                {syncStatus === 'syncing' && <span className="flex items-center gap-1 text-[10px] md:text-xs text-blue-600 bg-blue-50 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap"><i className="ph-fill ph-spinner animate-spin"></i> Đang tải...</span>}
+                                {syncStatus === 'error' && <span className="flex items-center gap-1 text-[10px] md:text-xs text-red-600 bg-red-50 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap"><i className="ph-fill ph-warning"></i> Ngoại tuyến</span>}
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-500 hidden sm:block">
                                 Hệ thống AI Phân tích Báo cáo Đa Phòng Ban
-                                {syncStatus === 'synced' && <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><i className="ph-fill ph-check-circle"></i> Đã đồng bộ Cloud</span>}
-                                {syncStatus === 'syncing' && <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"><i className="ph-fill ph-spinner animate-spin"></i> Đang tải từ Cloud...</span>}
-                                {syncStatus === 'error' && <span className="flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full"><i className="ph-fill ph-warning"></i> Chạy Offline</span>}
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 ml-auto">
                         {isAdmin ? (
-                            <button onClick={onOpenSyncModal} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-4 py-2 rounded-full font-bold transition-colors shadow-sm text-sm" title="Cấu hình Link kết nối Google Sheets">
-                                <i className="ph-bold ph-gear text-lg"></i> Cấu hình DB
+                            <button onClick={onOpenSyncModal} className="flex items-center gap-1 md:gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 md:px-4 py-1.5 md:py-2 rounded-full font-bold transition-colors shadow-sm text-xs md:text-sm" title="Cấu hình Link kết nối Google Sheets">
+                                <i className="ph-bold ph-gear text-base md:text-lg"></i> <span className="hidden md:inline">Cấu hình DB</span>
                             </button>
                         ) : (
-                            <button onClick={onRefresh} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-bold transition-colors shadow-sm text-sm" title="Tải dữ liệu mới nhất từ Cloud">
-                                <i className="ph-bold ph-arrows-clockwise text-lg"></i> Làm mới dữ liệu
+                            <button onClick={onRefresh} className="flex items-center gap-1 md:gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full font-bold transition-colors shadow-sm text-xs md:text-sm" title="Tải dữ liệu mới nhất từ Cloud">
+                                <i className="ph-bold ph-arrows-clockwise text-base md:text-lg"></i> <span className="hidden md:inline">Làm mới</span>
                             </button>
                         )}
                         
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isAdmin ? 'bg-beu-teal2/10 border-beu-teal2/30' : 'bg-purple-50 border-purple-200'}`}>
-                            <i className={`ph-fill ${isAdmin ? 'ph-user-circle text-beu-teal1' : 'ph-users-three text-beu-purple2'} text-2xl`}></i>
+                        <div className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full border ${isAdmin ? 'bg-beu-teal2/10 border-beu-teal2/30' : 'bg-purple-50 border-purple-200'}`}>
+                            <i className={`ph-fill ${isAdmin ? 'ph-user-circle text-beu-teal1' : 'ph-users-three text-beu-purple2'} text-xl md:text-2xl`}></i>
                             <select 
                                 value={role} 
                                 onChange={(e) => {
                                     setRole(e.target.value);
                                     localStorage.setItem('beu_role', e.target.value);
                                 }} 
-                                className={`bg-transparent text-sm font-bold outline-none cursor-pointer appearance-none ${isAdmin ? 'text-beu-purple1' : 'text-beu-purple2'}`}
+                                className={`bg-transparent text-xs md:text-sm font-bold outline-none cursor-pointer appearance-none ${isAdmin ? 'text-beu-purple1' : 'text-beu-purple2'}`}
                             >
-                                <option value="VIEWER">Ban Giám Đốc (Xem)</option>
-                                <option value="ADMIN">Admin Yên (Quản lý)</option>
+                                <option value="VIEWER">Ban Giám Đốc</option>
+                                <option value="ADMIN">Admin Yên</option>
                             </select>
-                            <i className={`ph-bold ph-caret-down text-xs ml-1 ${isAdmin ? 'text-beu-teal1' : 'text-beu-purple2'}`}></i>
+                            <i className={`ph-bold ph-caret-down text-[10px] md:text-xs ml-0.5 md:ml-1 ${isAdmin ? 'text-beu-teal1' : 'text-beu-purple2'}`}></i>
                         </div>
                     </div>
                 </header>
@@ -310,12 +318,12 @@ QUY TẮC BẮT BUỘC:
         };
 
         const ProcessingScreen = ({ fileName, statusText }) => (
-            <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 print-hidden">
+            <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 print-hidden p-4">
                 <div className="ai-loader mb-8 shadow-lg"></div>
-                <h2 className="text-2xl font-bold text-beu-purple1 mb-2">Hệ thống đang xử lý...</h2>
-                <p className="text-gray-600 text-center max-w-md"><span className="font-semibold text-beu-teal1">{fileName}</span></p>
-                <div className="mt-8 w-64 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner"><div className="bg-beu-purple1 h-2 rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ width: '100%' }}></div></div>
-                <div className="mt-6 px-4 py-2 bg-white text-beu-teal3 rounded-lg font-medium flex items-center gap-2 border border-beu-teal2 shadow-sm"><i className="ph-fill ph-spinner-gap animate-spin text-xl"></i> {statusText}</div>
+                <h2 className="text-xl md:text-2xl font-bold text-beu-purple1 mb-2 text-center">Hệ thống đang xử lý...</h2>
+                <p className="text-sm md:text-base text-gray-600 text-center max-w-md truncate w-full px-4"><span className="font-semibold text-beu-teal1">{fileName}</span></p>
+                <div className="mt-8 w-48 md:w-64 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner"><div className="bg-beu-purple1 h-2 rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ width: '100%' }}></div></div>
+                <div className="mt-6 px-4 py-2 bg-white text-beu-teal3 rounded-lg font-medium flex items-center gap-2 border border-beu-teal2 shadow-sm text-sm"><i className="ph-fill ph-spinner-gap animate-spin text-lg md:text-xl"></i> {statusText}</div>
             </div>
         );
 
@@ -375,61 +383,61 @@ QUY TẮC BẮT BUỘC:
             const DetailModal = () => {
                 if (!activeDetail) return null;
                 return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-beu-purple1/60 backdrop-blur-sm transition-opacity print-hidden" onClick={() => setActiveDetail(null)}>
-                        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90%]" onClick={e => e.stopPropagation()}>
-                            <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
-                                <h3 className="text-xl font-bold text-beu-purple1 flex items-center gap-2"><i className="ph-fill ph-info text-beu-teal1"></i> Chi Tiết: {activeDetail.title}</h3>
-                                <button onClick={() => setActiveDetail(null)} className="text-gray-400 hover:text-red-500"><i className="ph ph-x text-2xl"></i></button>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-beu-purple1/60 backdrop-blur-sm transition-opacity print-hidden" onClick={() => setActiveDetail(null)}>
+                        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                            <div className="px-4 md:px-6 py-3 md:py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
+                                <h3 className="text-lg md:text-xl font-bold text-beu-purple1 flex items-center gap-2 line-clamp-1"><i className="ph-fill ph-info text-beu-teal1"></i> Chi Tiết: {activeDetail.title}</h3>
+                                <button onClick={() => setActiveDetail(null)} className="text-gray-400 hover:text-red-500 ml-2 shrink-0"><i className="ph ph-x text-2xl"></i></button>
                             </div>
-                            <div className="p-6 overflow-y-auto">
+                            <div className="p-4 md:p-6 overflow-y-auto">
                                 {activeDetail.type === 'metric' && (
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className={`p-4 ${activeDetail.iconInfo.bg} rounded-xl ${activeDetail.iconInfo.text}`}><i className={`ph-fill ${activeDetail.iconInfo.icon} text-4xl`}></i></div>
-                                            <div><div className="text-4xl font-black text-beu-purple1">{activeDetail.value}</div><div className="text-gray-500 text-lg">{activeDetail.note}</div></div>
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                                            <div className={`p-4 w-fit ${activeDetail.iconInfo.bg} rounded-xl ${activeDetail.iconInfo.text}`}><i className={`ph-fill ${activeDetail.iconInfo.icon} text-3xl md:text-4xl`}></i></div>
+                                            <div><div className="text-3xl md:text-4xl font-black text-beu-purple1">{activeDetail.value}</div><div className="text-gray-500 text-sm md:text-lg">{activeDetail.note}</div></div>
                                         </div>
-                                        <div className="bg-beu-teal2/10 p-5 rounded-xl border border-beu-teal2/30">
-                                            <h4 className="font-bold text-beu-teal3 mb-3 flex items-center gap-2"><i className="ph ph-sparkle"></i> AI Phân Tích Đánh Giá:</h4>
-                                            <p className="text-gray-800 leading-relaxed text-justify">{activeDetail.detailedAnalysis || "Không có phân tích."}</p>
+                                        <div className="bg-beu-teal2/10 p-4 md:p-5 rounded-xl border border-beu-teal2/30">
+                                            <h4 className="font-bold text-beu-teal3 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-sparkle"></i> AI Phân Tích Đánh Giá:</h4>
+                                            <p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.detailedAnalysis || "Không có phân tích."}</p>
                                         </div>
                                     </div>
                                 )}
                                 {activeDetail.type === 'chart' && (
                                     <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                                             {activeDetail.dataPoints && activeDetail.dataPoints.map((dp, idx) => {
                                                 let displayStr = dp.value.toLocaleString('vi-VN');
                                                 return (
                                                 <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm">
                                                     <span className="flex items-center gap-2 font-medium text-gray-700">
-                                                        <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
-                                                        <span className="line-clamp-2 text-sm">{dp.name}</span>
+                                                        <span className="w-3 h-3 md:w-4 md:h-4 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
+                                                        <span className="line-clamp-2 text-xs md:text-sm">{dp.name}</span>
                                                     </span>
-                                                    <span className="font-bold text-beu-purple1 whitespace-nowrap ml-2">{displayStr}</span>
+                                                    <span className="font-bold text-beu-purple1 whitespace-nowrap ml-2 text-sm md:text-base">{displayStr}</span>
                                                 </div>
                                             )})}
                                         </div>
-                                        <div className="bg-purple-50 p-5 rounded-xl border border-purple-100 mt-4"><h4 className="font-bold text-beu-purple2 mb-3 flex items-center gap-2"><i className="ph ph-lightbulb"></i> Nhận Xét:</h4><p className="text-gray-800 leading-relaxed text-justify">{activeDetail.insight || "Chưa có nhận xét."}</p></div>
+                                        <div className="bg-purple-50 p-4 md:p-5 rounded-xl border border-purple-100 mt-4"><h4 className="font-bold text-beu-purple2 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-lightbulb"></i> Nhận Xét:</h4><p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.insight || "Chưa có nhận xét."}</p></div>
                                     </div>
                                 )}
                                 {activeDetail.type === 'kpi' && (
-                                    <div className="space-y-5">
+                                    <div className="space-y-4 md:space-y-5">
                                         {activeDetail.items && activeDetail.items.map((kpi, idx) => {
                                             const isOver = kpi.progress > 100;
                                             const displayWidth = Math.min(kpi.progress, 100);
                                             return (
-                                            <div key={idx} className={`bg-white p-4 rounded-xl border shadow-sm transition-all ${isOver ? 'border-beu-teal2 bg-beu-teal2/5 shadow-beu-teal2/20' : ''}`}>
-                                                <div className="flex justify-between items-end text-base mb-2">
+                                            <div key={idx} className={`bg-white p-3 md:p-4 rounded-xl border shadow-sm transition-all ${isOver ? 'border-beu-teal2 bg-beu-teal2/5 shadow-beu-teal2/20' : ''}`}>
+                                                <div className="flex justify-between items-end text-sm md:text-base mb-2">
                                                     <span className="font-bold text-gray-800 flex items-center gap-2">
                                                         {kpi.name}
-                                                        {isOver && <span className="text-[10px] bg-beu-teal1 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold shadow-sm animate-pulse"><i className="ph-fill ph-rocket-launch"></i> Vượt KPI</span>}
+                                                        {isOver && <span className="text-[9px] md:text-[10px] bg-beu-teal1 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold shadow-sm animate-pulse"><i className="ph-fill ph-rocket-launch"></i> Vượt KPI</span>}
                                                     </span>
-                                                    <span className={`font-black ${isOver ? 'text-beu-teal1 text-lg' : 'text-beu-purple1'}`}>{kpi.progress}%</span>
+                                                    <span className={`font-black ${isOver ? 'text-beu-teal1 text-base md:text-lg' : 'text-beu-purple1'}`}>{kpi.progress}%</span>
                                                 </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden relative shadow-inner">
-                                                    <div className="h-3 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2 md:h-3 overflow-hidden relative shadow-inner">
+                                                    <div className="h-2 md:h-3 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
                                                     {isOver && (
-                                                        <div className="h-3 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes"></div>
+                                                        <div className="h-2 md:h-3 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes"></div>
                                                     )}
                                                 </div>
                                             </div>
@@ -437,20 +445,20 @@ QUY TẮC BẮT BUỘC:
                                     </div>
                                 )}
                                 {activeDetail.type === 'issues' && (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3 md:space-y-4">
                                         {activeDetail.items && activeDetail.items.map((issue, idx) => (
-                                            <div key={idx} className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-                                                <p className="font-bold text-orange-700 text-lg mb-2 flex items-center gap-2"><i className="ph-fill ph-warning"></i> {issue.problem}</p>
-                                                {issue.detailedReason && <div className="text-gray-600 mb-3 text-sm bg-white p-3 rounded-lg shadow-sm"><strong className="text-orange-600 block">Nguyên nhân:</strong> {issue.detailedReason}</div>}
-                                                <div className="text-gray-800 bg-white p-3 rounded-lg shadow-sm border border-orange-100"><strong className="text-beu-teal1 block">Giải pháp:</strong> {issue.solution}</div>
+                                            <div key={idx} className="bg-orange-50 p-3 md:p-4 rounded-xl border border-orange-200">
+                                                <p className="font-bold text-orange-700 text-base md:text-lg mb-2 flex items-center gap-2"><i className="ph-fill ph-warning shrink-0"></i> <span>{issue.problem}</span></p>
+                                                {issue.detailedReason && <div className="text-gray-600 mb-2 md:mb-3 text-xs md:text-sm bg-white p-2 md:p-3 rounded-lg shadow-sm"><strong className="text-orange-600 block">Nguyên nhân:</strong> {issue.detailedReason}</div>}
+                                                <div className="text-gray-800 bg-white p-2 md:p-3 rounded-lg shadow-sm border border-orange-100 text-sm md:text-base"><strong className="text-beu-teal1 block">Giải pháp:</strong> {issue.solution}</div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                                 {activeDetail.type === 'plans' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2 md:space-y-3">
                                         {activeDetail.items && activeDetail.items.map((plan, idx) => (
-                                            <div key={idx} className="flex items-start gap-3 bg-white p-4 rounded-xl border border-beu-teal2"><i className="ph-fill ph-check-circle text-beu-teal1 text-2xl shrink-0 mt-0.5"></i><span className="text-gray-700">{plan}</span></div>
+                                            <div key={idx} className="flex items-start gap-2 md:gap-3 bg-white p-3 md:p-4 rounded-xl border border-beu-teal2"><i className="ph-fill ph-check-circle text-beu-teal1 text-xl md:text-2xl shrink-0 mt-0.5"></i><span className="text-sm md:text-base text-gray-700">{plan}</span></div>
                                         ))}
                                     </div>
                                 )}
@@ -461,16 +469,16 @@ QUY TẮC BẮT BUỘC:
             };
 
             return (
-                <div className="p-8 max-w-6xl mx-auto space-y-6 relative h-full print-full">
+                <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-6 relative h-full print-full">
                     <DetailModal />
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4 mb-6">
-                        <div className="flex-1 pr-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 md:gap-4 border-b border-gray-200 pb-3 md:pb-4 mb-4 md:mb-6">
+                        <div className="flex-1 pr-0 md:pr-4">
                             {isEditingTitle && isAdmin ? (
-                                <div className="flex items-center text-3xl font-bold text-beu-purple1 uppercase tracking-tight w-full mb-1">
+                                <div className="flex flex-wrap items-center text-xl md:text-3xl font-bold text-beu-purple1 uppercase tracking-tight w-full mb-1">
                                     <span className="shrink-0">BÁO CÁO:&nbsp;</span>
                                     <input 
                                         type="text"
-                                        className="border-b-2 border-beu-teal1 focus:outline-none bg-blue-50/50 px-2 py-1 rounded-t w-full max-w-xl"
+                                        className="border-b-2 border-beu-teal1 focus:outline-none bg-blue-50/50 px-2 py-1 rounded-t w-full max-w-xl text-lg md:text-3xl"
                                         value={tempTitle}
                                         onChange={(e) => setTempTitle(e.target.value)}
                                         onBlur={handleSaveTitle}
@@ -480,60 +488,62 @@ QUY TẮC BẮT BUỘC:
                                 </div>
                             ) : (
                                 <h2 
-                                    className={`text-3xl font-bold text-beu-purple1 uppercase tracking-tight flex items-center gap-3 w-fit mb-1 ${isAdmin ? 'cursor-pointer group' : ''}`}
+                                    className={`text-xl md:text-3xl font-bold text-beu-purple1 uppercase tracking-tight flex items-center gap-2 md:gap-3 w-fit mb-1 ${isAdmin ? 'cursor-pointer group' : ''}`}
                                     onClick={() => isAdmin && setIsEditingTitle(true)}
                                     title={isAdmin ? "Bấm để chỉnh sửa tên báo cáo" : ""}
                                 >
-                                    BÁO CÁO: {data.departmentName || "TỔNG HỢP"}
+                                    <span className="line-clamp-2 leading-tight">BÁO CÁO: {data.departmentName || "TỔNG HỢP"}</span>
                                     {isAdmin && (
-                                        <button className="text-gray-300 group-hover:text-beu-teal1 transition-colors print-hidden">
-                                            <i className="ph-fill ph-pencil-simple text-xl"></i>
+                                        <button className="text-gray-300 group-hover:text-beu-teal1 transition-colors print-hidden shrink-0 mt-1">
+                                            <i className="ph-fill ph-pencil-simple text-lg md:text-xl"></i>
                                         </button>
                                     )}
                                 </h2>
                             )}
-                            <p className="text-gray-600 font-medium mt-1">Kỳ báo cáo: <span className="text-beu-teal1">{data.reportPeriod || "N/A"}</span> {data.author ? `| Người lập: ${data.author}` : ''}</p>
+                            <p className="text-sm md:text-base text-gray-600 font-medium mt-1">Kỳ báo cáo: <span className="text-beu-teal1">{data.reportPeriod || "N/A"}</span> <span className="hidden md:inline">{data.author ? `| Người lập: ${data.author}` : ''}</span></p>
+                            {/* Hiện thêm dòng người lập riêng cho Mobile */}
+                            {data.author && <p className="text-xs text-gray-500 md:hidden mt-0.5">Người lập: {data.author}</p>}
                         </div>
-                        <div className="flex gap-3 print-hidden shrink-0">
-                            <button onClick={handlePrintPDF} className="flex items-center gap-2 bg-beu-purple1 hover:bg-beu-purple2 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-md" title="Lưu thành file PDF để báo cáo">
+                        <div className="flex gap-2 md:gap-3 print-hidden shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                            <button onClick={handlePrintPDF} className="w-full sm:w-auto justify-center flex items-center gap-2 bg-beu-purple1 hover:bg-beu-purple2 text-white px-3 md:px-4 py-2 rounded-lg font-bold transition-colors shadow-md text-sm md:text-base" title="Lưu thành file PDF để báo cáo">
                                 <i className="ph-bold ph-printer"></i> In / Lưu PDF
                             </button>
                         </div>
                     </div>
 
                     {data.keyMetrics && data.keyMetrics.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {data.keyMetrics.map((metric, idx) => {
                                 const style = getIconInfo(metric.iconType, idx);
                                 return (
-                                    <div key={idx} onClick={() => setActiveDetail({ ...metric, type: 'metric', iconInfo: style, title: metric.label })} className={`bg-white rounded-xl p-6 border-l-4 ${style.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group`}>
+                                    <div key={idx} onClick={() => setActiveDetail({ ...metric, type: 'metric', iconInfo: style, title: metric.label })} className={`bg-white rounded-xl p-4 md:p-6 border-l-4 ${style.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group`}>
                                         <div className="flex justify-between items-start">
-                                            <div><p className="text-sm text-gray-500 font-bold mb-1 uppercase">{metric.label}</p><h3 className="text-2xl font-bold text-beu-purple1">{metric.value}</h3></div>
-                                            <div className={`p-3 ${style.bg} rounded-lg ${style.text}`}><i className={`ph-fill ${style.icon} text-2xl`}></i></div>
+                                            <div><p className="text-xs md:text-sm text-gray-500 font-bold mb-1 uppercase line-clamp-1 pr-2">{metric.label}</p><h3 className="text-xl md:text-2xl font-bold text-beu-purple1">{metric.value}</h3></div>
+                                            <div className={`p-2.5 md:p-3 ${style.bg} rounded-lg ${style.text} shrink-0`}><i className={`ph-fill ${style.icon} text-xl md:text-2xl`}></i></div>
                                         </div>
-                                        <div className="mt-4 text-sm text-gray-600 line-clamp-2">{metric.note}</div>
+                                        <div className="mt-3 md:mt-4 text-xs md:text-sm text-gray-600 line-clamp-2">{metric.note}</div>
                                     </div>
                                 );
                             })}
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         {data.charts && data.charts.length > 0 && (
-                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="text-lg font-bold text-beu-purple1 mb-6 border-b pb-2">Phân Tích Dữ Liệu</h3>
-                                <div className="flex flex-col sm:flex-row justify-around gap-6">
+                            <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100 overflow-hidden">
+                                <h3 className="text-base md:text-lg font-bold text-beu-purple1 mb-4 md:mb-6 border-b pb-2">Phân Tích Dữ Liệu</h3>
+                                <div className="flex flex-col sm:flex-row sm:flex-wrap justify-around gap-4 md:gap-6">
                                     {data.charts.map((chart, cIdx) => {
                                         return (
-                                        <div key={cIdx} onClick={() => setActiveDetail({ ...chart, type: 'chart' })} className="flex flex-col items-center flex-1 p-4 rounded-xl hover:bg-gray-50 hover:shadow-inner cursor-pointer border border-transparent hover:border-gray-200 transition-all group">
-                                            <h4 className="text-sm font-semibold text-gray-700 mb-4 text-center">{chart.title}</h4>
-                                            <div className="donut-chart shadow-md" style={{ background: generateGradient(chart.dataPoints) }}><div className="donut-inner flex flex-col items-center justify-center"><span className="text-[10px] text-gray-400 uppercase">Tỷ trọng</span></div></div>
-                                            <div className="mt-4 space-y-2 text-sm w-full">
+                                        <div key={cIdx} onClick={() => setActiveDetail({ ...chart, type: 'chart' })} className="flex flex-col items-center w-full sm:w-[calc(50%-1rem)] lg:flex-1 p-3 md:p-4 rounded-xl hover:bg-gray-50 hover:shadow-inner cursor-pointer border border-transparent hover:border-gray-200 transition-all group">
+                                            <h4 className="text-xs md:text-sm font-semibold text-gray-700 mb-3 md:mb-4 text-center line-clamp-2 h-8 md:h-10">{chart.title}</h4>
+                                            <div className="donut-chart w-[120px] h-[120px] md:w-[150px] md:h-[150px] shadow-md shrink-0" style={{ background: generateGradient(chart.dataPoints) }}><div className="donut-inner w-[80px] h-[80px] md:w-[100px] md:h-[100px] flex flex-col items-center justify-center"><span className="text-[8px] md:text-[10px] text-gray-400 uppercase">Tỷ trọng</span></div></div>
+                                            <div className="mt-3 md:mt-4 space-y-1.5 md:space-y-2 text-xs md:text-sm w-full max-w-[250px] mx-auto">
                                                 {chart.dataPoints && chart.dataPoints.map((dp, idx) => {
                                                     let displayStr = dp.value.toLocaleString('vi-VN');
                                                     return (
-                                                    <div key={idx} className="flex items-center gap-2">
-                                                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
+                                                    <div key={idx} className="flex items-center gap-1.5 md:gap-2">
+                                                        <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
                                                         <span className="truncate" title={`${displayStr} ${dp.name}`}><b>{displayStr}</b> {dp.name}</span>
                                                     </div>
                                                 )})}
@@ -543,25 +553,25 @@ QUY TẮC BẮT BUỘC:
                                 </div>
                             </div>
                         )}
-                        <div onClick={() => setActiveDetail({ title: 'Tiến Độ KPI', type: 'kpi', items: data.kpiList })} className={`bg-white rounded-xl p-6 shadow-sm hover:shadow-xl cursor-pointer border border-transparent hover:border-beu-purple1/20 transition-all group ${(!data.charts || data.charts.length === 0) ? 'lg:col-span-2' : ''}`}>
-                            <div className="flex justify-between items-end mb-6 border-b pb-2"><h3 className="text-lg font-bold text-beu-purple1">Tiến Độ Hoàn Thành (KPI)</h3></div>
-                            <div className="space-y-4">
+                        <div onClick={() => setActiveDetail({ title: 'Tiến Độ KPI', type: 'kpi', items: data.kpiList })} className={`bg-white rounded-xl p-4 md:p-6 shadow-sm hover:shadow-xl cursor-pointer border border-transparent hover:border-beu-purple1/20 transition-all group ${(!data.charts || data.charts.length === 0) ? 'lg:col-span-2' : ''}`}>
+                            <div className="flex justify-between items-end mb-4 md:mb-6 border-b pb-2"><h3 className="text-base md:text-lg font-bold text-beu-purple1">Tiến Độ Hoàn Thành (KPI)</h3></div>
+                            <div className="space-y-3 md:space-y-4">
                                 {data.kpiList && data.kpiList.map((kpi, idx) => {
                                     const isOver = kpi.progress > 100;
                                     const displayWidth = Math.min(kpi.progress, 100);
                                     return (
                                     <div key={idx}>
-                                        <div className="flex justify-between items-end text-sm mb-1">
-                                            <span className="font-medium text-gray-700 flex items-center gap-1">
+                                        <div className="flex justify-between items-end text-xs md:text-sm mb-1">
+                                            <span className="font-medium text-gray-700 flex items-center gap-1 line-clamp-1 pr-2">
                                                 {kpi.name}
-                                                {isOver && <i className="ph-fill ph-fire text-orange-500 animate-bounce" title="Vượt chỉ tiêu!"></i>}
+                                                {isOver && <i className="ph-fill ph-fire text-orange-500 animate-bounce shrink-0" title="Vượt chỉ tiêu!"></i>}
                                             </span>
-                                            <span className={`font-bold ${isOver ? 'text-beu-teal1' : 'text-beu-purple1'}`}>{kpi.progress}%</span>
+                                            <span className={`font-bold ${isOver ? 'text-beu-teal1' : 'text-beu-purple1'} shrink-0`}>{kpi.progress}%</span>
                                         </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-2 shadow-inner relative overflow-hidden">
-                                            <div className="h-2 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
+                                        <div className="w-full bg-gray-100 rounded-full h-1.5 md:h-2 shadow-inner relative overflow-hidden">
+                                            <div className="h-1.5 md:h-2 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
                                             {isOver && (
-                                                <div className="h-2 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes opacity-70"></div>
+                                                <div className="h-1.5 md:h-2 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes opacity-70"></div>
                                             )}
                                         </div>
                                     </div>
@@ -570,20 +580,20 @@ QUY TẮC BẮT BUỘC:
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-                        <div onClick={() => setActiveDetail({ title: 'Vấn Đề Tồn Đọng', type: 'issues', items: data.issues })} className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-l-orange-400 hover:shadow-xl cursor-pointer transition-all group">
-                            <h3 className="text-lg font-bold text-orange-600 mb-4 flex items-center gap-2"><i className="ph-fill ph-warning-circle"></i> Vấn Đề & Đề Xuất</h3>
-                            <ul className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pb-6 md:pb-8">
+                        <div onClick={() => setActiveDetail({ title: 'Vấn Đề Tồn Đọng', type: 'issues', items: data.issues })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-orange-400 hover:shadow-xl cursor-pointer transition-all group">
+                            <h3 className="text-base md:text-lg font-bold text-orange-600 mb-3 md:mb-4 flex items-center gap-2"><i className="ph-fill ph-warning-circle"></i> Vấn Đề & Đề Xuất</h3>
+                            <ul className="space-y-2 md:space-y-3">
                                 {data.issues && data.issues.map((issue, idx) => (
-                                    <li key={idx} className="flex gap-3 bg-orange-50/50 p-3 rounded-lg"><div className="text-orange-600 shrink-0"><i className="ph-fill ph-warning"></i></div><div><p className="font-semibold text-gray-800">{issue.problem}</p><p className="text-sm text-gray-600 mt-1 line-clamp-1">{issue.solution}</p></div></li>
+                                    <li key={idx} className="flex gap-2 md:gap-3 bg-orange-50/50 p-2 md:p-3 rounded-lg"><div className="text-orange-600 shrink-0 mt-0.5"><i className="ph-fill ph-warning text-sm md:text-base"></i></div><div><p className="font-semibold text-gray-800 text-sm md:text-base leading-snug">{issue.problem}</p><p className="text-xs md:text-sm text-gray-600 mt-1 line-clamp-2 md:line-clamp-1">{issue.solution}</p></div></li>
                                 ))}
                             </ul>
                         </div>
-                        <div onClick={() => setActiveDetail({ title: 'Kế Hoạch Tiếp Theo', type: 'plans', items: data.nextWeekPlans })} className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-l-beu-teal1 hover:shadow-xl cursor-pointer transition-all group">
-                            <h3 className="text-lg font-bold text-beu-teal3 mb-4 flex items-center gap-2"><i className="ph-fill ph-calendar-check"></i> Kế Hoạch Tuần Tới</h3>
-                            <ul className="space-y-3">
+                        <div onClick={() => setActiveDetail({ title: 'Kế Hoạch Tiếp Theo', type: 'plans', items: data.nextWeekPlans })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-beu-teal1 hover:shadow-xl cursor-pointer transition-all group">
+                            <h3 className="text-base md:text-lg font-bold text-beu-teal3 mb-3 md:mb-4 flex items-center gap-2"><i className="ph-fill ph-calendar-check"></i> Kế Hoạch Tuần Tới</h3>
+                            <ul className="space-y-2 md:space-y-3">
                                 {data.nextWeekPlans && data.nextWeekPlans.map((plan, idx) => (
-                                    <li key={idx} className="flex items-center gap-3 text-gray-700 bg-gray-50 p-2.5 rounded-lg border border-gray-100"><i className="ph-fill ph-check-circle text-beu-teal1 shrink-0"></i><span className="line-clamp-1">{plan}</span></li>
+                                    <li key={idx} className="flex items-start gap-2 md:gap-3 text-gray-700 bg-gray-50 p-2 md:p-2.5 rounded-lg border border-gray-100"><i className="ph-fill ph-check-circle text-beu-teal1 shrink-0 mt-0.5 text-sm md:text-base"></i><span className="line-clamp-2 md:line-clamp-1 text-sm md:text-base">{plan}</span></li>
                                 ))}
                             </ul>
                         </div>
@@ -596,6 +606,9 @@ QUY TẮC BẮT BUỘC:
             const [role, setRole] = useState(() => localStorage.getItem('beu_role') || 'VIEWER');
             const isAdmin = role === 'ADMIN';
 
+            // TRẠNG THÁI MENU MOBILE (ĐÓNG/MỞ CÂY THƯ MỤC TRÊN ĐIỆN THOẠI)
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
             const [reports, setReports] = useState([]);
             const [activeReportId, setActiveReportId] = useState(null);
             const [isProcessing, setIsProcessing] = useState(false);
@@ -607,11 +620,9 @@ QUY TẮC BẮT BUỘC:
             const [showFolderModal, setShowFolderModal] = useState(false);
             const [showSyncModal, setShowSyncModal] = useState(false);
 
-            // LINK GOOGLE SHEETS MẶC ĐỊNH MỚI NHẤT DO ADMIN YÊN CUNG CẤP
             const defaultApiUrl = "https://script.google.com/macros/s/AKfycbyT5_SBMZdvytnL-Tu4cT6FgFq5s_azwSBWFDRmr9MPPXE-9pW3YGVfdE0eszNW4ELb/exec";
             const [sheetsApiUrl, setSheetsApiUrl] = useState(() => {
                 const saved = localStorage.getItem('beu_sheets_api');
-                // Tự động xóa link cũ bị lỗi và ép hệ thống dùng link mới
                 if (saved === "https://script.google.com/macros/s/AKfycbzIGDH5k_Sl_5Ny5Mg9uYZ_XBvIK-pMOMya4acZZJ8K1Fck5xTYLS1aybjrFsbjOqPb/exec") {
                     localStorage.setItem('beu_sheets_api', defaultApiUrl);
                     return defaultApiUrl;
@@ -655,21 +666,16 @@ QUY TẮC BẮT BUỘC:
                 return { year, month, week };
             };
 
-            // GIẢI PHÁP CHUẨN MỰC TỪ CHUYÊN GIA 25 NĂM KINH NGHIỆM: FETCH TEXT/PLAIN NGUYÊN THỦY
             const syncAllToSheets = async (reportsList) => {
                 if (!sheetsApiUrl) return;
                 setSyncStatus('syncing');
                 try {
-                    // Gửi nguyên cục JSON dạng văn bản (text/plain)
-                    // Bỏ trống Headers để không bị trình duyệt kích hoạt kiểm tra bảo mật (CORS Preflight)
                     const response = await fetch(sheetsApiUrl, {
                         method: 'POST',
                         body: JSON.stringify({ action: 'SYNC_ALL', payload: reportsList })
                     });
                     
-                    // Lắng nghe Google Sheets trả lời
                     const result = await response.json();
-                    
                     if (result.status === 'success') {
                         setSyncStatus('synced');
                     } else {
@@ -817,7 +823,6 @@ QUY TẮC BẮT BUỘC:
                     setStatusText('AI đang quét sâu và bóc tách số liệu...');
                     const parsedData = await parseWithGemini(textToParse);
                     
-                    // KHỬ TRÙNG LẶP VÀ DỌN DẸP SỐ LIỆU LỖI BẰNG JAVASCRIPT
                     if (parsedData) {
                         if (parsedData.keyMetrics) parsedData.keyMetrics = parsedData.keyMetrics.filter((v, i, a) => a.findIndex(t => t.label?.trim().toLowerCase() === v.label?.trim().toLowerCase()) === i);
                         if (parsedData.kpiList) parsedData.kpiList = parsedData.kpiList.filter((v, i, a) => a.findIndex(t => t.name?.trim().toLowerCase() === v.name?.trim().toLowerCase()) === i);
@@ -886,6 +891,9 @@ QUY TẮC BẮT BUỘC:
                     updateAndSyncReports(updated);
                     setActiveReportId(newReport.id);
 
+                    // Chuyển về màn hình Dashboard sau khi upload xong (Cho Mobile)
+                    setIsMobileMenuOpen(false);
+
                 } catch (error) {
                     console.error(error);
                     alert("Lỗi: " + error.message);
@@ -923,7 +931,7 @@ QUY TẮC BẮT BUỘC:
 
             return (
                 <div className="flex flex-col h-screen bg-gray-200">
-                    <Header syncStatus={syncStatus} onOpenSyncModal={() => setShowSyncModal(true)} role={role} setRole={setRole} onRefresh={() => fetchFromSheets(sheetsApiUrl)} />
+                    <Header syncStatus={syncStatus} onOpenSyncModal={() => setShowSyncModal(true)} role={role} setRole={setRole} onRefresh={() => fetchFromSheets(sheetsApiUrl)} onToggleMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
                     
                     {showFolderModal && (
                         <FolderCreateModal onClose={() => setShowFolderModal(false)} onCreate={handleCreateFolder} />
@@ -971,11 +979,25 @@ QUY TẮC BẮT BUỘC:
                         </div>
                     )}
 
-                    <div className="flex flex-1 overflow-hidden">
+                    <div className="flex flex-1 overflow-hidden relative">
                         
-                        {/* CỘT TRÁI: SIDEBAR */}
-                        <div className="w-[380px] bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 shadow-lg print-hidden">
+                        {/* OVERLAY LÀM TỐI MÀN HÌNH CHÍNH KHI MỞ MENU TRÊN MOBILE */}
+                        {isMobileMenuOpen && (
+                            <div 
+                                className="fixed inset-0 bg-beu-purple1/40 z-30 md:hidden backdrop-blur-sm transition-opacity"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            ></div>
+                        )}
+
+                        {/* CỘT TRÁI: SIDEBAR (TỰ ĐỘNG ĐÓNG/MỞ TRÊN MOBILE) */}
+                        <div className={`w-[85vw] max-w-[340px] md:w-[380px] bg-white border-r border-gray-200 flex flex-col shrink-0 z-40 shadow-2xl md:shadow-lg print-hidden absolute md:relative h-full transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                             
+                            {/* NÚT ĐÓNG MENU TRÊN MOBILE */}
+                            <div className="md:hidden flex justify-between items-center p-3 border-b bg-gray-50">
+                                <span className="font-bold text-beu-purple1"><i className="ph-fill ph-folders text-beu-teal1"></i> Quản lý Báo Cáo</span>
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-500 hover:text-red-500 p-1"><i className="ph-bold ph-x text-xl"></i></button>
+                            </div>
+
                             {/* CHỈ HIỂN THỊ Ô UPLOAD NẾU LÀ ADMIN */}
                             {isAdmin && (
                                 <div className="p-4 border-b border-gray-100 bg-gray-50">
@@ -1027,7 +1049,7 @@ QUY TẮC BẮT BUỘC:
                                                             e.stopPropagation();
                                                             setFolderToDelete({ level: 'year', year });
                                                         }}
-                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"
+                                                        className="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"
                                                         title="Xóa toàn bộ thư mục Năm này"
                                                     >
                                                         <i className="ph-fill ph-trash"></i>
@@ -1050,7 +1072,7 @@ QUY TẮC BẮT BUỘC:
                                                                             e.stopPropagation();
                                                                             setFolderToDelete({ level: 'month', year, month });
                                                                         }}
-                                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"
+                                                                        className="md:opacity-0 md:group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"
                                                                         title="Xóa toàn bộ thư mục Tháng này"
                                                                     >
                                                                         <i className="ph-fill ph-trash"></i>
@@ -1097,7 +1119,7 @@ QUY TẮC BẮT BUỘC:
                                                                                                 e.stopPropagation();
                                                                                                 setFolderToDelete({ level: 'week', year, month, week });
                                                                                             }}
-                                                                                            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
+                                                                                            className="md:opacity-0 md:group-hover:opacity-100 text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
                                                                                             title="Xóa toàn bộ thư mục này"
                                                                                         >
                                                                                             <i className="ph-fill ph-trash"></i>
@@ -1121,7 +1143,12 @@ QUY TẮC BẮT BUỘC:
                                                                                                     e.dataTransfer.setData("text/plain", report.id);
                                                                                                 }}
                                                                                                 onDragEnd={() => isAdmin && setDraggedReportId(null)}
-                                                                                                onClick={() => !isProcessing && setActiveReportId(report.id)}
+                                                                                                onClick={() => {
+                                                                                                    if(!isProcessing) {
+                                                                                                        setActiveReportId(report.id);
+                                                                                                        setIsMobileMenuOpen(false); // TỰ ĐỘNG ĐÓNG MENU KHI CHỌN XONG TRÊN MOBILE
+                                                                                                    }
+                                                                                                }}
                                                                                                 className={`p-2.5 rounded-xl border transition-all group flex justify-between items-center ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:border-beu-teal2 hover:bg-gray-50' : 'cursor-pointer hover:border-beu-purple1 hover:bg-gray-50'} ${
                                                                                                     draggedReportId === report.id ? 'opacity-40 scale-95' : ''
                                                                                                 } ${
@@ -1149,7 +1176,7 @@ QUY TẮC BẮT BUỘC:
                                                                                                             e.stopPropagation();
                                                                                                             setReportToDelete(report.id);
                                                                                                         }}
-                                                                                                        className="text-gray-300 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                                                                                        className="text-gray-300 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors md:opacity-0 md:group-hover:opacity-100"
                                                                                                         title="Xóa báo cáo này"
                                                                                                     >
                                                                                                         <i className="ph-fill ph-trash text-base"></i>
@@ -1174,23 +1201,28 @@ QUY TẮC BẮT BUỘC:
                             </div>
                         </div>
 
-                        {/* CỘT PHẢI: DASHBOARD */}
-                        <div className="flex-1 bg-gray-100 relative overflow-y-auto">
+                        {/* CỘT PHẢI: DASHBOARD CHÍNH */}
+                        <div className="flex-1 bg-gray-100 relative overflow-y-auto w-full">
                             {isProcessing ? (
                                 <ProcessingScreen fileName={uploadingFileName} statusText={statusText} />
                             ) : activeReport ? (
                                 <DashboardScreen report={activeReport} onUpdateTitle={handleUpdateReportTitle} isAdmin={isAdmin} />
                             ) : syncStatus === 'syncing' && reports.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-beu-teal1 p-8 text-center print-hidden">
-                                    <div className="w-32 h-32 bg-beu-teal2/20 rounded-full flex items-center justify-center mb-6 shadow-inner text-beu-teal1"><i className="ph-fill ph-arrows-clockwise animate-spin text-6xl"></i></div>
-                                    <h2 className="text-2xl font-bold text-beu-purple1 mb-2">Đang tự động tải dữ liệu từ Google Sheets...</h2>
-                                    <p className="text-gray-500 max-w-md">Vui lòng đợi giây lát để hệ thống cập nhật các báo cáo mới nhất của Học Viện.</p>
+                                    <div className="w-24 h-24 md:w-32 md:h-32 bg-beu-teal2/20 rounded-full flex items-center justify-center mb-6 shadow-inner text-beu-teal1"><i className="ph-fill ph-arrows-clockwise animate-spin text-5xl md:text-6xl"></i></div>
+                                    <h2 className="text-xl md:text-2xl font-bold text-beu-purple1 mb-2">Đang tải dữ liệu từ Google Sheets...</h2>
+                                    <p className="text-sm md:text-base text-gray-500 max-w-md">Vui lòng đợi giây lát để hệ thống cập nhật các báo cáo mới nhất của Học Viện.</p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center print-hidden">
-                                    <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner text-gray-400"><i className="ph-fill ph-microsoft-excel-logo text-6xl"></i></div>
-                                    <h2 className="text-2xl font-bold text-gray-500 mb-2">Hệ Sinh Thái Cloud (Google Sheets)</h2>
-                                    <p className="text-gray-400 max-w-md">Toàn bộ dữ liệu của Học Viện được bảo vệ, đồng bộ hóa tự động và quản lý tập trung thông qua Google Sheets.</p>
+                                    <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-full flex items-center justify-center mb-6 shadow-inner text-gray-400"><i className="ph-fill ph-microsoft-excel-logo text-5xl md:text-6xl"></i></div>
+                                    <h2 className="text-xl md:text-2xl font-bold text-gray-500 mb-2">Hệ Sinh Thái Cloud (Google Sheets)</h2>
+                                    <p className="text-sm md:text-base text-gray-400 max-w-md">Toàn bộ dữ liệu của Học Viện được bảo vệ, đồng bộ hóa tự động và quản lý tập trung thông qua Google Sheets.</p>
+                                    
+                                    {/* Nút mở Menu khẩn cấp nếu màn hình trống trên Mobile */}
+                                    <button onClick={() => setIsMobileMenuOpen(true)} className="mt-8 md:hidden flex items-center gap-2 bg-beu-teal1 text-white px-6 py-3 rounded-full font-bold shadow-lg">
+                                        <i className="ph-bold ph-folders text-xl"></i> Mở Thư Mục Báo Cáo
+                                    </button>
                                 </div>
                             )}
                         </div>
