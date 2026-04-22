@@ -347,6 +347,49 @@ QUY TẮC BẮT BUỘC:
             );
         };
 
+        const FolderRenameModal = ({ folder, onClose, onRename }) => {
+            const [newName, setNewName] = useState(folder ? folder.week : "");
+            
+            useEffect(() => {
+                if(folder) setNewName(folder.week);
+            }, [folder]);
+
+            const onSubmit = (e) => {
+                e.preventDefault();
+                onRename(folder.year, folder.month, folder.week, newName);
+            };
+
+            if (!folder) return null;
+
+            return (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-beu-purple1/60 backdrop-blur-sm print-hidden">
+                    <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col scale-100 transition-transform">
+                        <div className="px-5 py-4 border-b bg-blue-50 flex justify-between items-center">
+                            <h3 className="font-bold text-blue-800 flex items-center gap-2"><i className="ph-fill ph-pencil-simple text-xl"></i> Đổi Tên Thư Mục</h3>
+                            <button onClick={onClose} className="text-gray-400 hover:text-red-500"><i className="ph ph-x text-xl"></i></button>
+                        </div>
+                        <form onSubmit={onSubmit} className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Tên thư mục mới</label>
+                                <input 
+                                    type="text" 
+                                    value={newName} 
+                                    onChange={e => setNewName(e.target.value)} 
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" 
+                                    required 
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-4">
+                                <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors">Hủy</button>
+                                <button type="submit" disabled={!newName.trim() || newName === folder.week} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-bold transition-colors shadow-sm">Lưu thay đổi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
         const ProcessingScreen = ({ fileName, statusText }) => (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 print-hidden p-4">
                 <div className="ai-loader mb-8 shadow-lg"></div>
@@ -647,6 +690,7 @@ QUY TẮC BẮT BUỘC:
             const [showFolderModal, setShowFolderModal] = useState(false);
             const [showSyncModal, setShowSyncModal] = useState(false);
             const [expandedNodes, setExpandedNodes] = useState({});
+            const [folderToRename, setFolderToRename] = useState(null);
 
             const defaultApiUrl = "https://script.google.com/macros/s/AKfycbyT5_SBMZdvytnL-Tu4cT6FgFq5s_azwSBWFDRmr9MPPXE-9pW3YGVfdE0eszNW4ELb/exec";
             const [sheetsApiUrl, setSheetsApiUrl] = useState(() => {
@@ -831,6 +875,28 @@ QUY TẮC BẮT BUỘC:
                 }));
             };
 
+            const handleRenameFolder = (year, month, oldWeek, newWeek) => {
+                if (!newWeek || newWeek.trim() === '' || newWeek === oldWeek) return;
+                
+                const updated = reports.map(r => {
+                    const rPath = getReportPath(r);
+                    if (rPath.year === year && rPath.month === month && rPath.week === oldWeek) {
+                        return { ...r, folderPath: { ...rPath, week: newWeek } };
+                    }
+                    return r;
+                });
+                
+                updateAndSyncReports(updated);
+                
+                setExpandedNodes(prev => {
+                    const next = { ...prev };
+                    delete next[`w-${year}-${month}-${oldWeek}`];
+                    next[`w-${year}-${month}-${newWeek}`] = true;
+                    return next;
+                });
+                setFolderToRename(null);
+            };
+
             const handleUpload = async (file) => {
                 setUploadingFileName(file.name);
                 setIsProcessing(true);
@@ -965,6 +1031,10 @@ QUY TẮC BẮT BUỘC:
                     
                     {showFolderModal && (
                         <FolderCreateModal onClose={() => setShowFolderModal(false)} onCreate={handleCreateFolder} />
+                    )}
+
+                    {folderToRename && (
+                        <FolderRenameModal folder={folderToRename} onClose={() => setFolderToRename(null)} onRename={handleRenameFolder} />
                     )}
 
                     {showSyncModal && (
@@ -1132,16 +1202,28 @@ QUY TẮC BẮT BUỘC:
                                                                                 <div className="flex items-center gap-1">
                                                                                     <span className="bg-beu-teal2/20 text-beu-teal3 px-2 py-0.5 rounded-md text-[10px] font-bold">{realReports.length}</span>
                                                                                     {isAdmin && (
-                                                                                        <button 
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                setFolderToDelete({ level: 'week', year, month, week });
-                                                                                            }}
-                                                                                            className="md:opacity-0 md:group-hover:opacity-100 text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
-                                                                                            title="Xóa toàn bộ thư mục này"
-                                                                                        >
-                                                                                            <i className="ph-fill ph-trash"></i>
-                                                                                        </button>
+                                                                                        <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                                                            <button 
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    setFolderToRename({ year, month, week });
+                                                                                                }}
+                                                                                                className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-1 rounded transition-colors"
+                                                                                                title="Đổi tên thư mục này"
+                                                                                            >
+                                                                                                <i className="ph-fill ph-pencil-simple"></i>
+                                                                                            </button>
+                                                                                            <button 
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    setFolderToDelete({ level: 'week', year, month, week });
+                                                                                                }}
+                                                                                                className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
+                                                                                                title="Xóa toàn bộ thư mục này"
+                                                                                            >
+                                                                                                <i className="ph-fill ph-trash"></i>
+                                                                                            </button>
+                                                                                        </div>
                                                                                     )}
                                                                                 </div>
                                                                             </div>
