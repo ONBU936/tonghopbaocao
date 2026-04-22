@@ -89,7 +89,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
 
         // --- CẤU HÌNH API GEMINI ---
         const apiKey = ""; 
@@ -152,8 +152,38 @@ QUY TẮC BẮT BUỘC:
             }
         };
 
-        // --- COMPONENTS GIAO DIỆN ---
+        // --- HÀM TIỆN ÍCH DÙNG CHUNG ---
+        const getReportPath = (report) => {
+            let year, month, week;
+            if (report.folderPath && report.folderPath.year !== undefined && report.folderPath.year !== null) {
+                year = String(report.folderPath.year);
+                month = String(report.folderPath.month);
+                week = String(report.folderPath.week);
+            } else {
+                let periodStr = (report.data?.reportPeriod || "").toLowerCase();
+                let date = new Date(report.createdAt || Date.now());
+                year = date.getFullYear().toString();
+                month = `Tháng ${String(date.getMonth() + 1).padStart(2, '0')}`;
+                week = "Báo cáo chung";
 
+                const yearMatch = periodStr.match(/20\d{2}/);
+                if (yearMatch) year = yearMatch[0];
+
+                const monthMatch = periodStr.match(/tháng\s*(\d{1,2})/);
+                if (monthMatch) month = `Tháng ${monthMatch[1].padStart(2, '0')}`;
+
+                const weekMatch = periodStr.match(/tuần\s*(\d{1,2})/);
+                if (weekMatch) week = `Tuần ${weekMatch[1]}`;
+            }
+            
+            if (year === "undefined" || !year) year = new Date().getFullYear().toString();
+            if (month === "undefined" || !month) month = "Tháng 01";
+            if (week === "undefined" || !week) week = "Báo cáo chung";
+
+            return { year, month, week };
+        };
+
+        // --- COMPONENTS GIAO DIỆN ---
         const Header = ({ syncStatus, onOpenSyncModal, role, setRole, onRefresh, onToggleMenu }) => {
             const isAdmin = role === 'ADMIN';
 
@@ -380,97 +410,95 @@ QUY TẮC BẮT BUỘC:
 
             const handlePrintPDF = () => { window.print(); };
 
-            const DetailModal = () => {
-                if (!activeDetail) return null;
-                return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-beu-purple1/60 backdrop-blur-sm transition-opacity print-hidden" onClick={() => setActiveDetail(null)}>
-                        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                            <div className="px-4 md:px-6 py-3 md:py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
-                                <h3 className="text-lg md:text-xl font-bold text-beu-purple1 flex items-center gap-2 line-clamp-1"><i className="ph-fill ph-info text-beu-teal1"></i> Chi Tiết: {activeDetail.title}</h3>
-                                <button onClick={() => setActiveDetail(null)} className="text-gray-400 hover:text-red-500 ml-2 shrink-0"><i className="ph ph-x text-2xl"></i></button>
-                            </div>
-                            <div className="p-4 md:p-6 overflow-y-auto">
-                                {activeDetail.type === 'metric' && (
-                                    <div className="space-y-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
-                                            <div className={`p-4 w-fit ${activeDetail.iconInfo.bg} rounded-xl ${activeDetail.iconInfo.text}`}><i className={`ph-fill ${activeDetail.iconInfo.icon} text-3xl md:text-4xl`}></i></div>
-                                            <div><div className="text-3xl md:text-4xl font-black text-beu-purple1">{activeDetail.value}</div><div className="text-gray-500 text-sm md:text-lg">{activeDetail.note}</div></div>
+            return (
+                <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-6 relative h-full print-full">
+                    
+                    {/* MODAL CHI TIẾT ĐƯỢC RENDER TRỰC TIẾP ĐỂ TRÁNH LỖI */}
+                    {activeDetail && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-beu-purple1/60 backdrop-blur-sm transition-opacity print-hidden" onClick={() => setActiveDetail(null)}>
+                            <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                                <div className="px-4 md:px-6 py-3 md:py-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
+                                    <h3 className="text-lg md:text-xl font-bold text-beu-purple1 flex items-center gap-2 line-clamp-1"><i className="ph-fill ph-info text-beu-teal1"></i> Chi Tiết: {activeDetail.title}</h3>
+                                    <button onClick={() => setActiveDetail(null)} className="text-gray-400 hover:text-red-500 ml-2 shrink-0"><i className="ph ph-x text-2xl"></i></button>
+                                </div>
+                                <div className="p-4 md:p-6 overflow-y-auto">
+                                    {activeDetail.type === 'metric' && (
+                                        <div className="space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                                                <div className={`p-4 w-fit ${activeDetail.iconInfo.bg} rounded-xl ${activeDetail.iconInfo.text}`}><i className={`ph-fill ${activeDetail.iconInfo.icon} text-3xl md:text-4xl`}></i></div>
+                                                <div><div className="text-3xl md:text-4xl font-black text-beu-purple1">{activeDetail.value}</div><div className="text-gray-500 text-sm md:text-lg">{activeDetail.note}</div></div>
+                                            </div>
+                                            <div className="bg-beu-teal2/10 p-4 md:p-5 rounded-xl border border-beu-teal2/30">
+                                                <h4 className="font-bold text-beu-teal3 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-sparkle"></i> AI Phân Tích Đánh Giá:</h4>
+                                                <p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.detailedAnalysis || "Không có phân tích."}</p>
+                                            </div>
                                         </div>
-                                        <div className="bg-beu-teal2/10 p-4 md:p-5 rounded-xl border border-beu-teal2/30">
-                                            <h4 className="font-bold text-beu-teal3 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-sparkle"></i> AI Phân Tích Đánh Giá:</h4>
-                                            <p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.detailedAnalysis || "Không có phân tích."}</p>
+                                    )}
+                                    {activeDetail.type === 'chart' && (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                                                {activeDetail.dataPoints && activeDetail.dataPoints.map((dp, idx) => {
+                                                    let displayStr = dp.value.toLocaleString('vi-VN');
+                                                    return (
+                                                    <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm">
+                                                        <span className="flex items-center gap-2 font-medium text-gray-700">
+                                                            <span className="w-3 h-3 md:w-4 md:h-4 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
+                                                            <span className="line-clamp-2 text-xs md:text-sm">{dp.name}</span>
+                                                        </span>
+                                                        <span className="font-bold text-beu-purple1 whitespace-nowrap ml-2 text-sm md:text-base">{displayStr}</span>
+                                                    </div>
+                                                )})}
+                                            </div>
+                                            <div className="bg-purple-50 p-4 md:p-5 rounded-xl border border-purple-100 mt-4"><h4 className="font-bold text-beu-purple2 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-lightbulb"></i> Nhận Xét:</h4><p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.insight || "Chưa có nhận xét."}</p></div>
                                         </div>
-                                    </div>
-                                )}
-                                {activeDetail.type === 'chart' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                                            {activeDetail.dataPoints && activeDetail.dataPoints.map((dp, idx) => {
-                                                let displayStr = dp.value.toLocaleString('vi-VN');
+                                    )}
+                                    {activeDetail.type === 'kpi' && (
+                                        <div className="space-y-4 md:space-y-5">
+                                            {activeDetail.items && activeDetail.items.map((kpi, idx) => {
+                                                const isOver = kpi.progress > 100;
+                                                const displayWidth = Math.min(kpi.progress, 100);
                                                 return (
-                                                <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm">
-                                                    <span className="flex items-center gap-2 font-medium text-gray-700">
-                                                        <span className="w-3 h-3 md:w-4 md:h-4 rounded-full shrink-0" style={{ backgroundColor: colors[idx % colors.length] }}></span>
-                                                        <span className="line-clamp-2 text-xs md:text-sm">{dp.name}</span>
-                                                    </span>
-                                                    <span className="font-bold text-beu-purple1 whitespace-nowrap ml-2 text-sm md:text-base">{displayStr}</span>
+                                                <div key={idx} className={`bg-white p-3 md:p-4 rounded-xl border shadow-sm transition-all ${isOver ? 'border-beu-teal2 bg-beu-teal2/5 shadow-beu-teal2/20' : ''}`}>
+                                                    <div className="flex justify-between items-end text-sm md:text-base mb-2">
+                                                        <span className="font-bold text-gray-800 flex items-center gap-2">
+                                                            {kpi.name}
+                                                            {isOver && <span className="text-[9px] md:text-[10px] bg-beu-teal1 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold shadow-sm animate-pulse"><i className="ph-fill ph-rocket-launch"></i> Vượt KPI</span>}
+                                                        </span>
+                                                        <span className={`font-black ${isOver ? 'text-beu-teal1 text-base md:text-lg' : 'text-beu-purple1'}`}>{kpi.progress}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2 shadow-inner relative overflow-hidden">
+                                                        <div className="h-1.5 md:h-2 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
+                                                        {isOver && (
+                                                            <div className="h-1.5 md:h-2 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes opacity-70"></div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )})}
                                         </div>
-                                        <div className="bg-purple-50 p-4 md:p-5 rounded-xl border border-purple-100 mt-4"><h4 className="font-bold text-beu-purple2 mb-2 md:mb-3 flex items-center gap-2 text-sm md:text-base"><i className="ph ph-lightbulb"></i> Nhận Xét:</h4><p className="text-gray-800 leading-relaxed text-justify text-sm md:text-base">{activeDetail.insight || "Chưa có nhận xét."}</p></div>
-                                    </div>
-                                )}
-                                {activeDetail.type === 'kpi' && (
-                                    <div className="space-y-4 md:space-y-5">
-                                        {activeDetail.items && activeDetail.items.map((kpi, idx) => {
-                                            const isOver = kpi.progress > 100;
-                                            const displayWidth = Math.min(kpi.progress, 100);
-                                            return (
-                                            <div key={idx} className={`bg-white p-3 md:p-4 rounded-xl border shadow-sm transition-all ${isOver ? 'border-beu-teal2 bg-beu-teal2/5 shadow-beu-teal2/20' : ''}`}>
-                                                <div className="flex justify-between items-end text-sm md:text-base mb-2">
-                                                    <span className="font-bold text-gray-800 flex items-center gap-2">
-                                                        {kpi.name}
-                                                        {isOver && <span className="text-[9px] md:text-[10px] bg-beu-teal1 text-white px-2 py-0.5 rounded-full uppercase tracking-wider font-bold shadow-sm animate-pulse"><i className="ph-fill ph-rocket-launch"></i> Vượt KPI</span>}
-                                                    </span>
-                                                    <span className={`font-black ${isOver ? 'text-beu-teal1 text-base md:text-lg' : 'text-beu-purple1'}`}>{kpi.progress}%</span>
+                                    )}
+                                    {activeDetail.type === 'issues' && (
+                                        <div className="space-y-3 md:space-y-4">
+                                            {activeDetail.items && activeDetail.items.map((issue, idx) => (
+                                                <div key={idx} className="bg-orange-50 p-3 md:p-4 rounded-xl border border-orange-200">
+                                                    <p className="font-bold text-orange-700 text-base md:text-lg mb-2 flex items-center gap-2"><i className="ph-fill ph-warning shrink-0"></i> <span>{issue.problem}</span></p>
+                                                    {issue.detailedReason && <div className="text-gray-600 mb-2 md:mb-3 text-xs md:text-sm bg-white p-2 md:p-3 rounded-lg shadow-sm"><strong className="text-orange-600 block">Nguyên nhân:</strong> {issue.detailedReason}</div>}
+                                                    <div className="text-gray-800 bg-white p-2 md:p-3 rounded-lg shadow-sm border border-orange-100 text-sm md:text-base"><strong className="text-beu-teal1 block">Giải pháp:</strong> {issue.solution}</div>
                                                 </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 md:h-3 overflow-hidden relative shadow-inner">
-                                                    <div className="h-2 md:h-3 rounded-full progress-bar absolute top-0 left-0" style={{ width: `${displayWidth}%`, backgroundColor: colors[idx % colors.length] }}></div>
-                                                    {isOver && (
-                                                        <div className="h-2 md:h-3 rounded-full absolute top-0 left-0 w-full bg-stripes animate-stripes"></div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )})}
-                                    </div>
-                                )}
-                                {activeDetail.type === 'issues' && (
-                                    <div className="space-y-3 md:space-y-4">
-                                        {activeDetail.items && activeDetail.items.map((issue, idx) => (
-                                            <div key={idx} className="bg-orange-50 p-3 md:p-4 rounded-xl border border-orange-200">
-                                                <p className="font-bold text-orange-700 text-base md:text-lg mb-2 flex items-center gap-2"><i className="ph-fill ph-warning shrink-0"></i> <span>{issue.problem}</span></p>
-                                                {issue.detailedReason && <div className="text-gray-600 mb-2 md:mb-3 text-xs md:text-sm bg-white p-2 md:p-3 rounded-lg shadow-sm"><strong className="text-orange-600 block">Nguyên nhân:</strong> {issue.detailedReason}</div>}
-                                                <div className="text-gray-800 bg-white p-2 md:p-3 rounded-lg shadow-sm border border-orange-100 text-sm md:text-base"><strong className="text-beu-teal1 block">Giải pháp:</strong> {issue.solution}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                {activeDetail.type === 'plans' && (
-                                    <div className="space-y-2 md:space-y-3">
-                                        {activeDetail.items && activeDetail.items.map((plan, idx) => (
-                                            <div key={idx} className="flex items-start gap-2 md:gap-3 bg-white p-3 md:p-4 rounded-xl border border-beu-teal2"><i className="ph-fill ph-check-circle text-beu-teal1 text-xl md:text-2xl shrink-0 mt-0.5"></i><span className="text-sm md:text-base text-gray-700">{plan}</span></div>
-                                        ))}
-                                    </div>
-                                )}
+                                            ))}
+                                        </div>
+                                    )}
+                                    {activeDetail.type === 'plans' && (
+                                        <div className="space-y-2 md:space-y-3">
+                                            {activeDetail.items && activeDetail.items.map((plan, idx) => (
+                                                <div key={idx} className="flex items-start gap-2 md:gap-3 bg-white p-3 md:p-4 rounded-xl border border-beu-teal2"><i className="ph-fill ph-check-circle text-beu-teal1 text-xl md:text-2xl shrink-0 mt-0.5"></i><span className="text-sm md:text-base text-gray-700">{plan}</span></div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            };
+                    )}
 
-            return (
-                <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-4 md:space-y-6 relative h-full print-full">
-                    <DetailModal />
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 md:gap-4 border-b border-gray-200 pb-3 md:pb-4 mb-4 md:mb-6">
                         <div className="flex-1 pr-0 md:pr-4">
                             {isEditingTitle && isAdmin ? (
@@ -606,7 +634,6 @@ QUY TẮC BẮT BUỘC:
             const [role, setRole] = useState(() => localStorage.getItem('beu_role') || 'VIEWER');
             const isAdmin = role === 'ADMIN';
 
-            // TRẠNG THÁI MENU MOBILE (ĐÓNG/MỞ CÂY THƯ MỤC TRÊN ĐIỆN THOẠI)
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
             const [reports, setReports] = useState([]);
@@ -619,6 +646,7 @@ QUY TẮC BẮT BUỘC:
             const [dragOverTarget, setDragOverTarget] = useState(null);
             const [showFolderModal, setShowFolderModal] = useState(false);
             const [showSyncModal, setShowSyncModal] = useState(false);
+            const [expandedNodes, setExpandedNodes] = useState({});
 
             const defaultApiUrl = "https://script.google.com/macros/s/AKfycbyT5_SBMZdvytnL-Tu4cT6FgFq5s_azwSBWFDRmr9MPPXE-9pW3YGVfdE0eszNW4ELb/exec";
             const [sheetsApiUrl, setSheetsApiUrl] = useState(() => {
@@ -636,35 +664,25 @@ QUY TẮC BẮT BUỘC:
                 localStorage.setItem('beu_sheets_api', url);
             };
 
-            const getReportPath = (report) => {
-                let year, month, week;
-                if (report.folderPath && report.folderPath.year !== undefined && report.folderPath.year !== null) {
-                    year = String(report.folderPath.year);
-                    month = String(report.folderPath.month);
-                    week = String(report.folderPath.week);
-                } else {
-                    let periodStr = (report.data?.reportPeriod || "").toLowerCase();
-                    let date = new Date(report.createdAt || Date.now());
-                    year = date.getFullYear().toString();
-                    month = `Tháng ${String(date.getMonth() + 1).padStart(2, '0')}`;
-                    week = "Báo cáo chung";
-
-                    const yearMatch = periodStr.match(/20\d{2}/);
-                    if (yearMatch) year = yearMatch[0];
-
-                    const monthMatch = periodStr.match(/tháng\s*(\d{1,2})/);
-                    if (monthMatch) month = `Tháng ${monthMatch[1].padStart(2, '0')}`;
-
-                    const weekMatch = periodStr.match(/tuần\s*(\d{1,2})/);
-                    if (weekMatch) week = `Tuần ${weekMatch[1]}`;
-                }
-                
-                if (year === "undefined" || !year) year = new Date().getFullYear().toString();
-                if (month === "undefined" || !month) month = "Tháng 01";
-                if (week === "undefined" || !week) week = "Báo cáo chung";
-
-                return { year, month, week };
-            };
+            // THUẬT TOÁN TỰ ĐỘNG CHỌN BÁO CÁO MỚI NHẤT KHI MỞ APP
+            const autoSelectLatest = useCallback((dataList) => {
+                setActiveReportId(currentId => {
+                    if (currentId) return currentId; // Nếu user đang xem file nào đó thì không tự chuyển
+                    if (!Array.isArray(dataList)) return null;
+                    const latest = dataList.find(r => r.fileName !== "_FOLDER_");
+                    if (latest) {
+                        const path = getReportPath(latest);
+                        setExpandedNodes(prev => ({
+                            ...prev,
+                            [`y-${path.year}`]: true,
+                            [`m-${path.year}-${path.month}`]: true,
+                            [`w-${path.year}-${path.month}-${path.week}`]: true
+                        }));
+                        return latest.id;
+                    }
+                    return null;
+                });
+            }, []);
 
             const syncAllToSheets = async (reportsList) => {
                 if (!sheetsApiUrl) return;
@@ -707,20 +725,34 @@ QUY TẮC BẮT BUỘC:
                         setReports(sortedData);
                         localStorage.setItem('beu_reports_db', JSON.stringify(sortedData)); 
                         setSyncStatus('synced');
+                        autoSelectLatest(sortedData); 
                     }
                 } catch (error) {
                     console.error("Lỗi kéo dữ liệu:", error);
                     setSyncStatus('error');
                     const localData = localStorage.getItem('beu_reports_db');
-                    if (localData) setReports(JSON.parse(localData));
+                    if (localData) {
+                        try {
+                            const parsed = JSON.parse(localData);
+                            setReports(parsed);
+                            autoSelectLatest(parsed);
+                        } catch(e) { console.error(e); }
+                    }
                 }
             };
 
             useEffect(() => {
-                if (sheetsApiUrl) fetchFromSheets(sheetsApiUrl);
-                else {
+                if (sheetsApiUrl) {
+                    fetchFromSheets(sheetsApiUrl);
+                } else {
                     const localData = localStorage.getItem('beu_reports_db');
-                    if (localData) setReports(JSON.parse(localData));
+                    if (localData) {
+                        try {
+                            const parsed = JSON.parse(localData);
+                            setReports(parsed);
+                            autoSelectLatest(parsed);
+                        } catch(e) { console.error(e); }
+                    }
                 }
             }, [sheetsApiUrl]);
 
@@ -891,7 +923,6 @@ QUY TẮC BẮT BUỘC:
                     updateAndSyncReports(updated);
                     setActiveReportId(newReport.id);
 
-                    // Chuyển về màn hình Dashboard sau khi upload xong (Cho Mobile)
                     setIsMobileMenuOpen(false);
 
                 } catch (error) {
@@ -921,7 +952,6 @@ QUY TẮC BẮT BUỘC:
             const groupedTree = buildTree(reports);
             const sortedYears = Object.keys(groupedTree).sort((a, b) => b - a);
 
-            const [expandedNodes, setExpandedNodes] = useState({});
             const toggleNode = (nodeId) => {
                 setExpandedNodes(prev => ({ ...prev, [nodeId]: prev[nodeId] === false ? true : false }));
             };
@@ -941,7 +971,6 @@ QUY TẮC BẮT BUỘC:
                         <SheetsConfigModal onClose={() => setShowSyncModal(false)} apiUrl={sheetsApiUrl} setApiUrl={saveApiUrl} onSync={fetchFromSheets} disabled={isProcessing} />
                     )}
 
-                    {/* MODAL XÓA BÁO CÁO */}
                     {reportToDelete && (
                         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-beu-purple1/60 backdrop-blur-sm print-hidden">
                             <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col scale-100 transition-transform">
@@ -960,7 +989,6 @@ QUY TẮC BẮT BUỘC:
                         </div>
                     )}
 
-                    {/* MODAL XÓA THƯ MỤC */}
                     {folderToDelete && (
                         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-beu-purple1/60 backdrop-blur-sm print-hidden">
                             <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col scale-100 transition-transform">
@@ -981,7 +1009,6 @@ QUY TẮC BẮT BUỘC:
 
                     <div className="flex flex-1 overflow-hidden relative">
                         
-                        {/* OVERLAY LÀM TỐI MÀN HÌNH CHÍNH KHI MỞ MENU TRÊN MOBILE */}
                         {isMobileMenuOpen && (
                             <div 
                                 className="fixed inset-0 bg-beu-purple1/40 z-30 md:hidden backdrop-blur-sm transition-opacity"
@@ -989,16 +1016,13 @@ QUY TẮC BẮT BUỘC:
                             ></div>
                         )}
 
-                        {/* CỘT TRÁI: SIDEBAR (TỰ ĐỘNG ĐÓNG/MỞ TRÊN MOBILE) */}
                         <div className={`w-[85vw] max-w-[340px] md:w-[380px] bg-white border-r border-gray-200 flex flex-col shrink-0 z-40 shadow-2xl md:shadow-lg print-hidden absolute md:relative h-full transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                             
-                            {/* NÚT ĐÓNG MENU TRÊN MOBILE */}
                             <div className="md:hidden flex justify-between items-center p-3 border-b bg-gray-50">
                                 <span className="font-bold text-beu-purple1"><i className="ph-fill ph-folders text-beu-teal1"></i> Quản lý Báo Cáo</span>
                                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-500 hover:text-red-500 p-1"><i className="ph-bold ph-x text-xl"></i></button>
                             </div>
 
-                            {/* CHỈ HIỂN THỊ Ô UPLOAD NẾU LÀ ADMIN */}
                             {isAdmin && (
                                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                                     <CompactUploadScreen onUpload={handleUpload} disabled={isProcessing} />
@@ -1006,7 +1030,6 @@ QUY TẮC BẮT BUỘC:
                             )}
                             
                             <div className="flex-1 overflow-y-auto p-4 bg-white relative flex flex-col">
-                                {/* HEADER CÂY THƯ MỤC CÓ NÚT THÊM (+) */}
                                 <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 sticky top-0 bg-white z-20">
                                     <span className="font-bold text-gray-400 text-[11px] uppercase tracking-widest flex items-center gap-1"><i className="ph-fill ph-tree-structure text-sm"></i> Cây Thư Mục</span>
                                     {isAdmin && (
@@ -1017,7 +1040,6 @@ QUY TẮC BẮT BUỘC:
                                 </div>
 
                                 <div className="flex-1 space-y-2">
-                                    {/* HIỆN TRẠNG THÁI LOADING KHI ĐANG TỰ ĐỘNG ĐỒNG BỘ MÀ CHƯA CÓ BÁO CÁO */}
                                     {reports.length === 0 && syncStatus === 'syncing' && (
                                         <div className="text-center p-6 rounded-xl text-beu-teal1 text-sm flex flex-col items-center mt-4">
                                             <i className="ph-fill ph-spinner animate-spin text-3xl mb-2"></i>
@@ -1035,7 +1057,6 @@ QUY TẮC BẮT BUỘC:
                                         </div>
                                     )}
 
-                                    {/* LỊCH SỬ BÁO CÁO - GIAO DIỆN CÂY THƯ MỤC */}
                                     {sortedYears.map(year => (
                                         <div key={`y-${year}`} className="mb-2">
                                             <div onClick={() => toggleNode(`y-${year}`)} className="group flex items-center justify-between font-bold text-beu-purple1 p-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors select-none border border-transparent hover:border-gray-200">
@@ -1102,7 +1123,6 @@ QUY TẮC BẮT BUỘC:
                                                                                 }
                                                                             }}
                                                                         >
-                                                                            {/* Nút thư mục TUẦN */}
                                                                             <div className="group flex items-center justify-between font-medium text-beu-teal1 mb-1.5 cursor-pointer select-none text-xs hover:text-beu-teal3 rounded" onClick={() => toggleNode(targetId)}>
                                                                                 <div className="flex items-center gap-2">
                                                                                     <i className={`ph-bold ${isExpanded(targetId, false) ? 'ph-caret-down' : 'ph-caret-right'}`}></i>
@@ -1111,8 +1131,6 @@ QUY TẮC BẮT BUỘC:
                                                                                 </div>
                                                                                 <div className="flex items-center gap-1">
                                                                                     <span className="bg-beu-teal2/20 text-beu-teal3 px-2 py-0.5 rounded-md text-[10px] font-bold">{realReports.length}</span>
-                                                                                    
-                                                                                    {/* NÚT XÓA THƯ MỤC TUẦN */}
                                                                                     {isAdmin && (
                                                                                         <button 
                                                                                             onClick={(e) => {
@@ -1146,7 +1164,7 @@ QUY TẮC BẮT BUỘC:
                                                                                                 onClick={() => {
                                                                                                     if(!isProcessing) {
                                                                                                         setActiveReportId(report.id);
-                                                                                                        setIsMobileMenuOpen(false); // TỰ ĐỘNG ĐÓNG MENU KHI CHỌN XONG TRÊN MOBILE
+                                                                                                        setIsMobileMenuOpen(false); 
                                                                                                     }
                                                                                                 }}
                                                                                                 className={`p-2.5 rounded-xl border transition-all group flex justify-between items-center ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:border-beu-teal2 hover:bg-gray-50' : 'cursor-pointer hover:border-beu-purple1 hover:bg-gray-50'} ${
@@ -1169,7 +1187,6 @@ QUY TẮC BẮT BUỘC:
                                                                                                     </div>
                                                                                                 </div>
 
-                                                                                                {/* NÚT XÓA TỪNG BÁO CÁO */}
                                                                                                 {isAdmin && (
                                                                                                     <button
                                                                                                         onClick={(e) => {
@@ -1201,7 +1218,6 @@ QUY TẮC BẮT BUỘC:
                             </div>
                         </div>
 
-                        {/* CỘT PHẢI: DASHBOARD CHÍNH */}
                         <div className="flex-1 bg-gray-100 relative overflow-y-auto w-full">
                             {isProcessing ? (
                                 <ProcessingScreen fileName={uploadingFileName} statusText={statusText} />
@@ -1219,7 +1235,6 @@ QUY TẮC BẮT BUỘC:
                                     <h2 className="text-xl md:text-2xl font-bold text-gray-500 mb-2">Hệ Sinh Thái Cloud (Google Sheets)</h2>
                                     <p className="text-sm md:text-base text-gray-400 max-w-md">Toàn bộ dữ liệu của Học Viện được bảo vệ, đồng bộ hóa tự động và quản lý tập trung thông qua Google Sheets.</p>
                                     
-                                    {/* Nút mở Menu khẩn cấp nếu màn hình trống trên Mobile */}
                                     <button onClick={() => setIsMobileMenuOpen(true)} className="mt-8 md:hidden flex items-center gap-2 bg-beu-teal1 text-white px-6 py-3 rounded-full font-bold shadow-lg">
                                         <i className="ph-bold ph-folders text-xl"></i> Mở Thư Mục Báo Cáo
                                     </button>
