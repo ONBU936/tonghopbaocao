@@ -183,7 +183,6 @@ QUY TẮC BẮT BUỘC:
             return { year, month, week };
         };
 
-        // --- COMPONENTS GIAO DIỆN ---
         const Header = ({ syncStatus, onOpenSyncModal, role, setRole, onRefresh, onToggleMenu }) => {
             const isAdmin = role === 'ADMIN';
 
@@ -744,7 +743,7 @@ QUY TẮC BẮT BUỘC:
                         throw new Error(result.message || "Google Sheets từ chối lưu");
                     }
                 } catch (error) {
-                    console.error("Lỗi đồng bộ (Hãy kiểm tra lại Link API):", error);
+                    console.warn("Lỗi đồng bộ (Hãy kiểm tra lại Link API):", error.message);
                     setSyncStatus('error');
                 }
             };
@@ -772,7 +771,7 @@ QUY TẮC BẮT BUỘC:
                         autoSelectLatest(sortedData); 
                     }
                 } catch (error) {
-                    console.error("Lỗi kéo dữ liệu:", error);
+                    console.warn("Chế độ Offline: Không thể kết nối Google Sheets (API bị lỗi hoặc hỏng). Đang dùng dữ liệu máy cục bộ.", error.message);
                     setSyncStatus('error');
                     const localData = localStorage.getItem('beu_reports_db');
                     if (localData) {
@@ -780,7 +779,7 @@ QUY TẮC BẮT BUỘC:
                             const parsed = JSON.parse(localData);
                             setReports(parsed);
                             autoSelectLatest(parsed);
-                        } catch(e) { console.error(e); }
+                        } catch(e) { console.warn(e.message); }
                     }
                 }
             };
@@ -895,6 +894,73 @@ QUY TẮC BẮT BUỘC:
                     return next;
                 });
                 setFolderToRename(null);
+            };
+
+            const handleGenerateSummary = (year, month, week, realReports) => {
+                const reportsToProcess = realReports.filter(r => !String(r.id).startsWith('summary_'));
+                if (reportsToProcess.length === 0) {
+                    alert("Chưa có báo cáo của phòng ban nào để tổng hợp.");
+                    return;
+                }
+
+                setIsProcessing(true);
+                setStatusText("AI đang tổng hợp Vấn Đề & Kế Hoạch...");
+                setUploadingFileName(`Tổng hợp ${week}`);
+
+                setTimeout(() => {
+                    let aggregatedIssues = [];
+                    let aggregatedPlans = [];
+                    
+                    reportsToProcess.forEach(report => {
+                        const dept = report.data.departmentName || "Phòng Ban Khác";
+                        
+                        if (report.data.issues && report.data.issues.length > 0) {
+                            report.data.issues.forEach(issue => {
+                                aggregatedIssues.push({
+                                    problem: `[${dept}] ${issue.problem}`,
+                                    solution: issue.solution,
+                                    detailedReason: issue.detailedReason
+                                });
+                            });
+                        }
+
+                        if (report.data.nextWeekPlans && report.data.nextWeekPlans.length > 0) {
+                            report.data.nextWeekPlans.forEach(plan => {
+                                aggregatedPlans.push(`[${dept}] ${plan}`);
+                            });
+                        }
+                    });
+
+                    const newReport = {
+                        id: 'summary_' + Date.now().toString(),
+                        fileName: "Báo_Cáo_Tổng_Hợp.pdf", 
+                        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        createdAt: Date.now(),
+                        monthYear: `${month}/${year}`,
+                        folderPath: { year, month, week },
+                        data: {
+                            departmentName: "TỔNG HỢP VẤN ĐỀ TỒN ĐỌNG",
+                            reportPeriod: `${week} - ${month}/${year}`,
+                            author: "Hệ Thống AI BeU",
+                            keyMetrics: [
+                                { label: "Tổng số phòng ban", value: reportsToProcess.length.toString(), iconType: "users", note: "Đã tổng hợp dữ liệu" },
+                                { label: "Tổng Vấn Đề", value: aggregatedIssues.length.toString(), iconType: "target", note: "Cần theo dõi & xử lý" }
+                            ],
+                            charts: [],
+                            kpiList: [],
+                            issues: aggregatedIssues,
+                            nextWeekPlans: aggregatedPlans
+                        }
+                    };
+
+                    const filteredReports = reports.filter(r => !(String(r.id).startsWith('summary_') && r.folderPath.year === year && r.folderPath.month === month && r.folderPath.week === week));
+                    const updated = [newReport, ...filteredReports].sort((a, b) => b.createdAt - a.createdAt);
+                    
+                    updateAndSyncReports(updated);
+                    setActiveReportId(newReport.id);
+                    setIsProcessing(false);
+                    if(window.innerWidth < 768) setIsMobileMenuOpen(false);
+                }, 1200); 
             };
 
             const handleUpload = async (file) => {
@@ -1233,56 +1299,72 @@ QUY TẮC BẮT BUỘC:
                                                                                     {realReports.length === 0 ? (
                                                                                         <div className="text-[10px] text-gray-400 italic py-1 px-2 border border-dashed border-gray-200 rounded-md bg-gray-50 text-center pointer-events-none">Thư mục trống</div>
                                                                                     ) : (
-                                                                                        realReports.sort((a,b) => b.createdAt - a.createdAt).map((report) => (
-                                                                                            <div 
-                                                                                                key={report.id}
-                                                                                                draggable={isAdmin ? "true" : "false"}
-                                                                                                onDragStart={(e) => {
-                                                                                                    if(!isAdmin) return;
-                                                                                                    setDraggedReportId(report.id);
-                                                                                                    e.dataTransfer.setData("text/plain", report.id);
-                                                                                                }}
-                                                                                                onDragEnd={() => isAdmin && setDraggedReportId(null)}
-                                                                                                onClick={() => {
-                                                                                                    if(!isProcessing) {
-                                                                                                        setActiveReportId(report.id);
-                                                                                                        setIsMobileMenuOpen(false); 
-                                                                                                    }
-                                                                                                }}
-                                                                                                className={`p-2.5 rounded-xl border transition-all group flex justify-between items-center ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:border-beu-teal2 hover:bg-gray-50' : 'cursor-pointer hover:border-beu-purple1 hover:bg-gray-50'} ${
-                                                                                                    draggedReportId === report.id ? 'opacity-40 scale-95' : ''
-                                                                                                } ${
-                                                                                                    activeReportId === report.id 
-                                                                                                    ? 'bg-beu-teal2/10 border-beu-teal1 shadow-sm relative' 
-                                                                                                    : 'bg-white border-gray-200'
-                                                                                                }`}
-                                                                                                title={isAdmin ? "Kéo thả để di chuyển thư mục" : "Bấm để xem báo cáo"}
-                                                                                            >
-                                                                                                {activeReportId === report.id && <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-6 bg-beu-teal1 rounded-r-md"></div>}
-                                                                                                
-                                                                                                <div className="flex-1 min-w-0 pr-2 pointer-events-none">
-                                                                                                    <div className="font-bold text-beu-purple1 mb-1 line-clamp-1 text-[13px] leading-tight" title={report.data.departmentName}>
-                                                                                                        {report.data.departmentName || "Báo Cáo Tóm Tắt"}
+                                                                                        <>
+                                                                                            {realReports.sort((a,b) => b.createdAt - a.createdAt).map((report) => (
+                                                                                                <div 
+                                                                                                    key={report.id}
+                                                                                                    draggable={isAdmin ? "true" : "false"}
+                                                                                                    onDragStart={(e) => {
+                                                                                                        if(!isAdmin) return;
+                                                                                                        setDraggedReportId(report.id);
+                                                                                                        e.dataTransfer.setData("text/plain", report.id);
+                                                                                                    }}
+                                                                                                    onDragEnd={() => isAdmin && setDraggedReportId(null)}
+                                                                                                    onClick={() => {
+                                                                                                        if(!isProcessing) {
+                                                                                                            setActiveReportId(report.id);
+                                                                                                            setIsMobileMenuOpen(false); 
+                                                                                                        }
+                                                                                                    }}
+                                                                                                    className={`p-2.5 rounded-xl border transition-all group flex justify-between items-center ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:border-beu-teal2 hover:bg-gray-50' : 'cursor-pointer hover:border-beu-purple1 hover:bg-gray-50'} ${
+                                                                                                        draggedReportId === report.id ? 'opacity-40 scale-95' : ''
+                                                                                                    } ${
+                                                                                                        activeReportId === report.id 
+                                                                                                        ? 'bg-beu-teal2/10 border-beu-teal1 shadow-sm relative' 
+                                                                                                        : 'bg-white border-gray-200'
+                                                                                                    }`}
+                                                                                                    title={isAdmin ? "Kéo thả để di chuyển thư mục" : "Bấm để xem báo cáo"}
+                                                                                                >
+                                                                                                    {activeReportId === report.id && <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-6 bg-beu-teal1 rounded-r-md"></div>}
+                                                                                                    
+                                                                                                    <div className="flex-1 min-w-0 pr-2 pointer-events-none">
+                                                                                                        <div className="font-bold text-beu-purple1 mb-1 line-clamp-1 text-[13px] leading-tight" title={report.data.departmentName}>
+                                                                                                            {report.data.departmentName || "Báo Cáo Tóm Tắt"}
+                                                                                                        </div>
+                                                                                                        <div className="text-[11px] text-gray-500 truncate font-medium flex items-center gap-1.5">
+                                                                                                            {String(report.id).startsWith('summary_') ? (
+                                                                                                                <i className="ph-fill ph-magic-wand text-beu-purple2 text-sm"></i>
+                                                                                                            ) : (
+                                                                                                                <i className="ph-fill ph-file-pdf text-red-400 text-sm"></i>
+                                                                                                            )}
+                                                                                                            <span className="truncate">{report.fileName}</span>
+                                                                                                        </div>
                                                                                                     </div>
-                                                                                                    <div className="text-[11px] text-gray-500 truncate font-medium flex items-center gap-1.5">
-                                                                                                        <i className="ph-fill ph-file-pdf text-red-400 text-sm"></i> {report.fileName}
-                                                                                                    </div>
-                                                                                                </div>
 
-                                                                                                {isAdmin && (
-                                                                                                    <button
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation();
-                                                                                                            setReportToDelete(report.id);
-                                                                                                        }}
-                                                                                                        className="text-gray-300 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors md:opacity-0 md:group-hover:opacity-100"
-                                                                                                        title="Xóa báo cáo này"
-                                                                                                    >
-                                                                                                        <i className="ph-fill ph-trash text-base"></i>
-                                                                                                    </button>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        ))
+                                                                                                    {isAdmin && (
+                                                                                                        <button
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                setReportToDelete(report.id);
+                                                                                                            }}
+                                                                                                            className="text-gray-300 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors md:opacity-0 md:group-hover:opacity-100"
+                                                                                                            title="Xóa báo cáo này"
+                                                                                                        >
+                                                                                                            <i className="ph-fill ph-trash text-base"></i>
+                                                                                                        </button>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            ))}
+                                                                                            {isAdmin && (
+                                                                                                <div 
+                                                                                                    onClick={() => handleGenerateSummary(year, month, week, realReports)}
+                                                                                                    className="p-2.5 mt-1 rounded-xl border-2 border-dashed border-beu-teal2 bg-beu-teal2/10 text-beu-teal1 hover:bg-beu-teal1 hover:text-white transition-all cursor-pointer flex justify-center items-center gap-2 font-bold text-[11px] shadow-sm uppercase tracking-wide"
+                                                                                                    title="AI: Tự động tổng hợp các Vấn đề & Kế hoạch trong tuần này"
+                                                                                                >
+                                                                                                    <i className="ph-fill ph-magic-wand text-sm"></i> Tổng Hợp Báo Cáo Tuần
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </>
                                                                                     )}
                                                                                 </div>
                                                                             )}
