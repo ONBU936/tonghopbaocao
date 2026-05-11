@@ -389,6 +389,16 @@ QUY TẮC BẮT BUỘC:
             );
         };
 
+        const ProcessingScreen = ({ fileName, statusText }) => (
+            <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 print-hidden p-4">
+                <div className="ai-loader mb-8 shadow-lg"></div>
+                <h2 className="text-xl md:text-2xl font-bold text-beu-purple1 mb-2 text-center">Hệ thống đang xử lý...</h2>
+                <p className="text-sm md:text-base text-gray-600 text-center max-w-md truncate w-full px-4"><span className="font-semibold text-beu-teal1">{fileName}</span></p>
+                <div className="mt-8 w-48 md:w-64 bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner"><div className="bg-beu-purple1 h-2 rounded-full animate-[pulse_1s_ease-in-out_infinite]" style={{ width: '100%' }}></div></div>
+                <div className="mt-6 px-4 py-2 bg-white text-beu-teal3 rounded-lg font-medium flex items-center gap-2 border border-beu-teal2 shadow-sm text-sm"><i className="ph-fill ph-spinner-gap animate-spin text-lg md:text-xl"></i> {statusText}</div>
+            </div>
+        );
+
         const DashboardScreen = ({ report, onUpdateTitle, onUpdateReport, isAdmin }) => {
             const data = report.data;
             const [activeDetail, setActiveDetail] = useState(null);
@@ -681,13 +691,25 @@ QUY TẮC BẮT BUỘC:
                                     {activeDetail.type === 'issues' && (
                                         <div className="space-y-3 md:space-y-4">
                                             {!isEditingContent ? (
-                                                activeDetail.items && activeDetail.items.map((issue, idx) => (
+                                                activeDetail.items && activeDetail.items.map((issue, idx) => {
+                                                    let badgeClass = ""; let badgeText = ""; let probText = issue.problem;
+                                                    if (probText.startsWith('[MỚI PHÁT SINH]')) { badgeClass="bg-red-500"; badgeText="MỚI"; probText = probText.replace('[MỚI PHÁT SINH]', '').trim(); }
+                                                    else if (probText.startsWith('[ĐÃ GIẢI QUYẾT]')) { badgeClass="bg-green-500"; badgeText="ĐÃ XONG"; probText = probText.replace('[ĐÃ GIẢI QUYẾT]', '').trim(); }
+                                                    else if (probText.startsWith('[TỒN ĐỌNG KÉO DÀI]')) { badgeClass="bg-purple-500"; badgeText="KÉO DÀI"; probText = probText.replace('[TỒN ĐỌNG KÉO DÀI]', '').trim(); }
+                                                    
+                                                    return (
                                                     <div key={idx} className="bg-orange-50 p-3 md:p-4 rounded-xl border border-orange-200">
-                                                        <p className="font-bold text-orange-700 text-base md:text-lg mb-2 flex items-center gap-2"><i className="ph-fill ph-warning shrink-0"></i> <span>{issue.problem}</span></p>
+                                                        <p className="font-bold text-orange-700 text-base md:text-lg mb-2 flex items-start gap-2">
+                                                            <i className="ph-fill ph-warning shrink-0 mt-1"></i> 
+                                                            <span>
+                                                                {badgeText && <span className={`inline-block px-2 py-0.5 text-[10px] font-bold text-white rounded mr-2 align-middle ${badgeClass}`}>{badgeText}</span>}
+                                                                {probText}
+                                                            </span>
+                                                        </p>
                                                         {issue.detailedReason && <div className="text-gray-600 mb-2 md:mb-3 text-xs md:text-sm bg-white p-2 md:p-3 rounded-lg shadow-sm"><strong className="text-orange-600 block">Nguyên nhân:</strong> {issue.detailedReason}</div>}
                                                         <div className="text-gray-800 bg-white p-2 md:p-3 rounded-lg shadow-sm border border-orange-100 text-sm md:text-base"><strong className="text-beu-teal1 block">Giải pháp:</strong> {issue.solution}</div>
                                                     </div>
-                                                ))
+                                                )})
                                             ) : (
                                                 <>
                                                     {editedItems.map((issue, idx) => (
@@ -882,9 +904,24 @@ QUY TẮC BẮT BUỘC:
                         <div onClick={() => setActiveDetail({ title: 'Vấn Đề Tồn Đọng', type: 'issues', items: data.issues, key: 'issues' })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-orange-400 hover:shadow-xl cursor-pointer transition-all group">
                             <h3 className="text-base md:text-lg font-bold text-orange-600 mb-3 md:mb-4 flex items-center gap-2"><i className="ph-fill ph-warning-circle"></i> Vấn Đề & Đề Xuất</h3>
                             <ul className="space-y-2 md:space-y-3">
-                                {data.issues && data.issues.map((issue, idx) => (
-                                    <li key={idx} className="flex gap-2 md:gap-3 bg-orange-50/50 p-2 md:p-3 rounded-lg"><div className="text-orange-600 shrink-0 mt-0.5"><i className="ph-fill ph-warning text-sm md:text-base"></i></div><div><p className="font-semibold text-gray-800 text-sm md:text-base leading-snug">{issue.problem}</p><p className="text-xs md:text-sm text-gray-600 mt-1 line-clamp-2 md:line-clamp-1">{issue.solution}</p></div></li>
-                                ))}
+                                {data.issues && data.issues.map((issue, idx) => {
+                                    let badgeClass = ""; let badgeText = ""; let probText = issue.problem;
+                                    if (probText.startsWith('[MỚI PHÁT SINH]')) { badgeClass="bg-red-500"; badgeText="MỚI"; probText = probText.replace('[MỚI PHÁT SINH]', '').trim(); }
+                                    else if (probText.startsWith('[ĐÃ GIẢI QUYẾT]')) { badgeClass="bg-green-500"; badgeText="ĐÃ XONG"; probText = probText.replace('[ĐÃ GIẢI QUYẾT]', '').trim(); }
+                                    else if (probText.startsWith('[TỒN ĐỌNG KÉO DÀI]')) { badgeClass="bg-purple-500"; badgeText="KÉO DÀI"; probText = probText.replace('[TỒN ĐỌNG KÉO DÀI]', '').trim(); }
+
+                                    return (
+                                    <li key={idx} className="flex gap-2 md:gap-3 bg-orange-50/50 p-2 md:p-3 rounded-lg">
+                                        <div className="text-orange-600 shrink-0 mt-0.5"><i className="ph-fill ph-warning text-sm md:text-base"></i></div>
+                                        <div>
+                                            <p className="font-semibold text-gray-800 text-sm md:text-base leading-snug">
+                                                {badgeText && <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold text-white rounded mr-1.5 align-middle ${badgeClass}`}>{badgeText}</span>}
+                                                {probText}
+                                            </p>
+                                            <p className="text-xs md:text-sm text-gray-600 mt-1 line-clamp-2 md:line-clamp-1">{issue.solution}</p>
+                                        </div>
+                                    </li>
+                                )})}
                             </ul>
                         </div>
                         <div onClick={() => setActiveDetail({ title: 'Kế Hoạch Tiếp Theo', type: 'plans', items: data.nextWeekPlans, key: 'nextWeekPlans' })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-beu-teal1 hover:shadow-xl cursor-pointer transition-all group">
@@ -1194,6 +1231,110 @@ QUY TẮC BẮT BUỘC:
                     setIsProcessing(false);
                     if(window.innerWidth < 768) setIsMobileMenuOpen(false);
                 }, 1200); 
+            };
+
+            const handleCompareWeeks = (year, month, currentWeekStr) => {
+                const currentWeekNum = parseInt(currentWeekStr.replace(/\D/g, ''));
+                if (isNaN(currentWeekNum) || currentWeekNum <= 1) {
+                    alert("Vui lòng chọn từ Tuần 2 trở đi để so sánh với tuần trước đó.");
+                    return;
+                }
+
+                const prevWeekStr = `Tuần ${currentWeekNum - 1}`;
+                
+                const currReports = reports.filter(r => r.folderPath.year === year && r.folderPath.month === month && r.folderPath.week === currentWeekStr && r.fileName !== "_FOLDER_" && !String(r.id).startsWith('compare_') && !String(r.id).startsWith('summary_'));
+                const prevReports = reports.filter(r => r.folderPath.year === year && r.folderPath.month === month && r.folderPath.week === prevWeekStr && r.fileName !== "_FOLDER_" && !String(r.id).startsWith('compare_') && !String(r.id).startsWith('summary_'));
+
+                if (currReports.length === 0 || prevReports.length === 0) {
+                    alert(`Cần có ít nhất 1 báo cáo của phòng ban ở cả ${prevWeekStr} và ${currentWeekStr} để AI có thể thực hiện đối chiếu.`);
+                    return;
+                }
+
+                setIsProcessing(true);
+                setStatusText(`AI đang phân tích đối chiếu ${prevWeekStr} và ${currentWeekStr}...`);
+                setUploadingFileName(`So sánh ${prevWeekStr} & ${currentWeekStr}`);
+
+                setTimeout(() => {
+                    let prevIssues = [];
+                    prevReports.forEach(r => {
+                        const dept = r.data.departmentName || "Phòng Ban Khác";
+                        (r.data.issues || []).forEach(i => prevIssues.push({...i, dept}));
+                    });
+
+                    let currIssues = [];
+                    currReports.forEach(r => {
+                        const dept = r.data.departmentName || "Phòng Ban Khác";
+                        (r.data.issues || []).forEach(i => currIssues.push({...i, dept}));
+                    });
+
+                    let aggregatedIssues = [];
+                    
+                    currIssues.forEach(curr => {
+                        const isPersisting = prevIssues.some(p => p.dept === curr.dept && (p.problem.includes(curr.problem.substring(0, 15)) || curr.problem.includes(p.problem.substring(0, 15))));
+                        
+                        if (isPersisting) {
+                            aggregatedIssues.push({
+                                problem: `[TỒN ĐỌNG KÉO DÀI] [${curr.dept}] ${curr.problem}`,
+                                solution: curr.solution,
+                                detailedReason: curr.detailedReason || "Chưa xử lý dứt điểm từ tuần trước."
+                            });
+                        } else {
+                            aggregatedIssues.push({
+                                problem: `[MỚI PHÁT SINH] [${curr.dept}] ${curr.problem}`,
+                                solution: curr.solution,
+                                detailedReason: curr.detailedReason
+                            });
+                        }
+                    });
+
+                    prevIssues.forEach(prev => {
+                        const isFoundInCurr = currIssues.some(c => c.dept === prev.dept && (c.problem.includes(prev.problem.substring(0, 15)) || prev.problem.includes(c.problem.substring(0, 15))));
+                        if (!isFoundInCurr) {
+                            aggregatedIssues.push({
+                                problem: `[ĐÃ GIẢI QUYẾT] [${prev.dept}] ${prev.problem}`,
+                                solution: "Đã không còn xuất hiện trong báo cáo tuần này.",
+                                detailedReason: "Vấn đề đã được khắc phục."
+                            });
+                        }
+                    });
+
+                    const diff = currIssues.length - prevIssues.length;
+                    const diffText = diff > 0 ? `Tăng ${diff} vấn đề` : diff < 0 ? `Giảm ${Math.abs(diff)} vấn đề` : "Không thay đổi";
+
+                    const newReport = {
+                        id: 'compare_' + Date.now().toString(),
+                        fileName: `So_Sanh_${prevWeekStr.replace(/ /g, '_')}_vs_${currentWeekStr.replace(/ /g, '_')}.pdf`, 
+                        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        createdAt: Date.now(),
+                        monthYear: `${month}/${year}`,
+                        folderPath: { year, month, week: currentWeekStr },
+                        data: {
+                            departmentName: `SO SÁNH VẤN ĐỀ TỒN ĐỌNG: ${prevWeekStr.toUpperCase()} & ${currentWeekStr.toUpperCase()}`,
+                            reportPeriod: `${month}/${year}`,
+                            author: "Hệ Thống AI BeU",
+                            keyMetrics: [
+                                { label: `Vấn đề ${prevWeekStr}`, value: prevIssues.length.toString(), iconType: "target", note: "Dữ liệu tuần trước" },
+                                { label: `Vấn đề ${currentWeekStr}`, value: currIssues.length.toString(), iconType: "target", note: "Dữ liệu tuần này" },
+                                { label: "Biến động", value: diffText, iconType: "chart", note: "So với tuần trước" }
+                            ],
+                            charts: [],
+                            kpiList: [],
+                            issues: aggregatedIssues.sort((a, b) => a.problem.localeCompare(b.problem)),
+                            nextWeekPlans: [
+                                "Ban Giám Đốc ưu tiên giải quyết dứt điểm các vấn đề [TỒN ĐỌNG KÉO DÀI].",
+                                "Phân tích nguyên nhân gốc rễ sinh ra các vấn đề [MỚI PHÁT SINH]."
+                            ]
+                        }
+                    };
+
+                    const filteredReports = reports.filter(r => !(String(r.id).startsWith('compare_') && r.folderPath.year === year && r.folderPath.month === month && r.folderPath.week === currentWeekStr));
+                    const updated = [newReport, ...filteredReports].sort((a, b) => b.createdAt - a.createdAt);
+                    
+                    updateAndSyncReports(updated);
+                    setActiveReportId(newReport.id);
+                    setIsProcessing(false);
+                    if(window.innerWidth < 768) setIsMobileMenuOpen(false);
+                }, 1500);
             };
 
             const handleUpload = async (file) => {
@@ -1565,7 +1706,7 @@ QUY TẮC BẮT BUỘC:
                                                                                                             {report.data.departmentName || "Báo Cáo Tóm Tắt"}
                                                                                                         </div>
                                                                                                         <div className="text-[11px] text-gray-500 truncate font-medium flex items-center gap-1.5">
-                                                                                                            {String(report.id).startsWith('summary_') ? (
+                                                                                                            {String(report.id).startsWith('summary_') || String(report.id).startsWith('compare_') ? (
                                                                                                                 <i className="ph-fill ph-magic-wand text-beu-purple2 text-sm"></i>
                                                                                                             ) : (
                                                                                                                 <i className="ph-fill ph-file-pdf text-red-400 text-sm"></i>
@@ -1589,12 +1730,24 @@ QUY TẮC BẮT BUỘC:
                                                                                                 </div>
                                                                                             ))}
                                                                                             {isAdmin && (
-                                                                                                <div 
-                                                                                                    onClick={() => handleGenerateSummary(year, month, week, realReports)}
-                                                                                                    className="p-2.5 mt-1 rounded-xl border-2 border-dashed border-beu-teal2 bg-beu-teal2/10 text-beu-teal1 hover:bg-beu-teal1 hover:text-white transition-all cursor-pointer flex justify-center items-center gap-2 font-bold text-[11px] shadow-sm uppercase tracking-wide"
-                                                                                                    title="AI: Tự động tổng hợp các Vấn đề & Kế hoạch trong tuần này"
-                                                                                                >
-                                                                                                    <i className="ph-fill ph-magic-wand text-sm"></i> Tổng Hợp Báo Cáo Tuần
+                                                                                                <div className="flex flex-col gap-1 mt-1">
+                                                                                                    <div 
+                                                                                                        onClick={() => handleGenerateSummary(year, month, week, realReports)}
+                                                                                                        className="p-2.5 rounded-xl border-2 border-dashed border-beu-teal2 bg-beu-teal2/10 text-beu-teal1 hover:bg-beu-teal1 hover:text-white transition-all cursor-pointer flex justify-center items-center gap-2 font-bold text-[11px] shadow-sm uppercase tracking-wide"
+                                                                                                        title="AI: Tự động tổng hợp các Vấn đề & Kế hoạch trong tuần này"
+                                                                                                    >
+                                                                                                        <i className="ph-fill ph-magic-wand text-sm"></i> Tổng Hợp Tuần Này
+                                                                                                    </div>
+                                                                                                    
+                                                                                                    {parseInt(week.replace(/\D/g, '')) > 1 && (
+                                                                                                        <div 
+                                                                                                            onClick={() => handleCompareWeeks(year, month, week)}
+                                                                                                            className="p-2.5 rounded-xl border-2 border-dashed border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white transition-all cursor-pointer flex justify-center items-center gap-2 font-bold text-[11px] shadow-sm uppercase tracking-wide"
+                                                                                                            title="AI: Đối chiếu các vấn đề tồn đọng với tuần trước đó"
+                                                                                                        >
+                                                                                                            <i className="ph-fill ph-scales text-sm"></i> So Sánh Với Tuần Trước
+                                                                                                        </div>
+                                                                                                    )}
                                                                                                 </div>
                                                                                             )}
                                                                                         </>
