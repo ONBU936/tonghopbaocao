@@ -5,26 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Báo Cáo - HỌC VIỆN ÔN NGỌC BeU</title>
     
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Thêm PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     </script>
 
-    <!-- Cấu hình màu sắc thương hiệu HỌC VIỆN ÔN NGỌC BeU -->
     <script>
         tailwind.config = {
             theme: {
@@ -133,7 +127,8 @@ QUY TẮC BẮT BUỘC:
    - 'keyMetrics': CHỈ TÍNH SỐ LƯỢNG TUYỆT ĐỐI. KHÔNG lấy số %.
    - 'kpiList': CHỈ TÍNH TỶ LỆ PHẦN TRĂM (%). 
    - 'charts': CHỈ VẼ CƠ CẤU THÀNH PHẦN (TỔNG = 100%). CẤM gộp các tỷ lệ % không liên quan (như chuyên cần, BTVN) vào chung 1 biểu đồ.
-3. Tuyệt đối không lặp lại 1 chỉ số ở 2 danh mục khác nhau.` }] },
+3. Tuyệt đối không lặp lại 1 chỉ số ở 2 danh mục khác nhau.
+4. ĐÁNH GIÁ ƯU TIÊN VẤN ĐỀ (issues): Bắt buộc thêm tiền tố vào đầu nội dung 'problem': '[TỒN ĐỌNG KÉO DÀI]' cho vấn đề nghiêm trọng/ưu tiên xử lý; '[MỚI PHÁT SINH]' cho vấn đề mới; '[ĐÃ GIẢI QUYẾT]' cho vấn đề đã xong.` }] },
                 generationConfig: { responseMimeType: "application/json", responseSchema: schema }
             };
 
@@ -408,6 +403,21 @@ QUY TẮC BẮT BUỘC:
             const [editedItems, setEditedItems] = useState([]);
             const [editedSingleItem, setEditedSingleItem] = useState(null);
             const colors = ['#27bdbe', '#5B378F', '#A2DADB', '#302261', '#3F989B', '#7b5aa6'];
+            
+            // THÊM TRẠNG THÁI CHO BỘ LỌC VẤN ĐỀ
+            const [modalIssueFilter, setModalIssueFilter] = useState('ALL');
+            const [cardIssueFilter, setCardIssueFilter] = useState('ALL');
+
+            const filterIssues = (issuesList, filterType) => {
+                if (!issuesList) return [];
+                return issuesList.filter(issue => {
+                    if (filterType === 'ALL') return true;
+                    if (filterType === 'PRIORITY') return issue.problem.includes('[TỒN ĐỌNG KÉO DÀI]');
+                    if (filterType === 'NEW') return issue.problem.includes('[MỚI PHÁT SINH]');
+                    if (filterType === 'RESOLVED') return issue.problem.includes('[ĐÃ GIẢI QUYẾT]');
+                    return true;
+                });
+            };
             
             useEffect(() => {
                 setTempHeader({ 
@@ -690,8 +700,16 @@ QUY TẮC BẮT BUỘC:
                                     )}
                                     {activeDetail.type === 'issues' && (
                                         <div className="space-y-3 md:space-y-4">
+                                            {!isEditingContent && (
+                                                <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+                                                    <button onClick={() => setModalIssueFilter('ALL')} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${modalIssueFilter === 'ALL' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>Tất cả</button>
+                                                    <button onClick={() => setModalIssueFilter('PRIORITY')} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 border ${modalIssueFilter === 'PRIORITY' ? 'bg-beu-purple2 text-white border-beu-purple2 shadow-md' : 'bg-white text-beu-purple2 border-purple-200 hover:bg-purple-50'}`}><i className="ph-fill ph-warning-circle text-sm"></i> Ưu tiên xử lý</button>
+                                                    <button onClick={() => setModalIssueFilter('NEW')} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 border ${modalIssueFilter === 'NEW' ? 'bg-red-500 text-white border-red-500 shadow-md' : 'bg-white text-red-500 border-red-200 hover:bg-red-50'}`}><i className="ph-fill ph-plus-circle text-sm"></i> Mới phát sinh</button>
+                                                    <button onClick={() => setModalIssueFilter('RESOLVED')} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-1.5 border ${modalIssueFilter === 'RESOLVED' ? 'bg-green-500 text-white border-green-500 shadow-md' : 'bg-white text-green-600 border-green-200 hover:bg-green-50'}`}><i className="ph-fill ph-check-circle text-sm"></i> Đã giải quyết</button>
+                                                </div>
+                                            )}
                                             {!isEditingContent ? (
-                                                activeDetail.items && activeDetail.items.map((issue, idx) => {
+                                                activeDetail.items && filterIssues(activeDetail.items, modalIssueFilter).map((issue, idx) => {
                                                     let badgeClass = ""; let badgeText = ""; let probText = issue.problem;
                                                     if (probText.startsWith('[MỚI PHÁT SINH]')) { badgeClass="bg-red-500"; badgeText="MỚI"; probText = probText.replace('[MỚI PHÁT SINH]', '').trim(); }
                                                     else if (probText.startsWith('[ĐÃ GIẢI QUYẾT]')) { badgeClass="bg-green-500"; badgeText="ĐÃ XONG"; probText = probText.replace('[ĐÃ GIẢI QUYẾT]', '').trim(); }
@@ -901,27 +919,46 @@ QUY TẮC BẮT BUỘC:
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pb-6 md:pb-8">
-                        <div onClick={() => setActiveDetail({ title: 'Vấn Đề Tồn Đọng', type: 'issues', items: data.issues, key: 'issues' })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-orange-400 hover:shadow-xl cursor-pointer transition-all group">
-                            <h3 className="text-base md:text-lg font-bold text-orange-600 mb-3 md:mb-4 flex items-center gap-2"><i className="ph-fill ph-warning-circle"></i> Vấn Đề & Đề Xuất</h3>
-                            <ul className="space-y-2 md:space-y-3">
-                                {data.issues && data.issues.map((issue, idx) => {
-                                    let badgeClass = ""; let badgeText = ""; let probText = issue.problem;
-                                    if (probText.startsWith('[MỚI PHÁT SINH]')) { badgeClass="bg-red-500"; badgeText="MỚI"; probText = probText.replace('[MỚI PHÁT SINH]', '').trim(); }
-                                    else if (probText.startsWith('[ĐÃ GIẢI QUYẾT]')) { badgeClass="bg-green-500"; badgeText="ĐÃ XONG"; probText = probText.replace('[ĐÃ GIẢI QUYẾT]', '').trim(); }
-                                    else if (probText.startsWith('[TỒN ĐỌNG KÉO DÀI]')) { badgeClass="bg-purple-500"; badgeText="KÉO DÀI"; probText = probText.replace('[TỒN ĐỌNG KÉO DÀI]', '').trim(); }
+                        <div onClick={() => setActiveDetail({ title: 'Vấn Đề Tồn Đọng', type: 'issues', items: data.issues, key: 'issues' })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-orange-400 hover:shadow-xl cursor-pointer transition-all group flex flex-col">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                <h3 className="text-base md:text-lg font-bold text-orange-600 flex items-center gap-2"><i className="ph-fill ph-warning-circle"></i> Vấn Đề & Đề Xuất</h3>
+                                <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => setCardIssueFilter('ALL')} className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${cardIssueFilter === 'ALL' ? 'bg-orange-100 text-orange-700' : 'text-gray-400 hover:bg-gray-100'}`} title="Tất cả">All</button>
+                                    <button onClick={() => setCardIssueFilter('PRIORITY')} className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${cardIssueFilter === 'PRIORITY' ? 'bg-purple-100 text-beu-purple2' : 'text-gray-400 hover:bg-gray-100'}`} title="Ưu tiên xử lý"><i className="ph-fill ph-warning-circle text-base"></i></button>
+                                    <button onClick={() => setCardIssueFilter('NEW')} className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${cardIssueFilter === 'NEW' ? 'bg-red-100 text-red-600' : 'text-gray-400 hover:bg-gray-100'}`} title="Mới phát sinh"><i className="ph-fill ph-plus-circle text-base"></i></button>
+                                </div>
+                            </div>
+                            
+                            <ul className="space-y-2 md:space-y-3 flex-1">
+                                {data.issues && filterIssues(data.issues, cardIssueFilter).length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center py-6 text-gray-400">
+                                        <i className="ph-fill ph-smiley text-3xl mb-2 text-green-400"></i>
+                                        <span className="text-sm font-medium">Tuyệt vời! Không có vấn đề ở mục này.</span>
+                                    </div>
+                                ) : (
+                                    data.issues && filterIssues(data.issues, cardIssueFilter).slice(0, 5).map((issue, idx) => {
+                                        let badgeClass = ""; let badgeText = ""; let probText = issue.problem;
+                                        if (probText.startsWith('[MỚI PHÁT SINH]')) { badgeClass="bg-red-500"; badgeText="MỚI"; probText = probText.replace('[MỚI PHÁT SINH]', '').trim(); }
+                                        else if (probText.startsWith('[ĐÃ GIẢI QUYẾT]')) { badgeClass="bg-green-500"; badgeText="ĐÃ XONG"; probText = probText.replace('[ĐÃ GIẢI QUYẾT]', '').trim(); }
+                                        else if (probText.startsWith('[TỒN ĐỌNG KÉO DÀI]')) { badgeClass="bg-beu-purple2"; badgeText="ƯU TIÊN"; probText = probText.replace('[TỒN ĐỌNG KÉO DÀI]', '').trim(); }
 
-                                    return (
-                                    <li key={idx} className="flex gap-2 md:gap-3 bg-orange-50/50 p-2 md:p-3 rounded-lg">
-                                        <div className="text-orange-600 shrink-0 mt-0.5"><i className="ph-fill ph-warning text-sm md:text-base"></i></div>
-                                        <div>
-                                            <p className="font-semibold text-gray-800 text-sm md:text-base leading-snug">
-                                                {badgeText && <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold text-white rounded mr-1.5 align-middle ${badgeClass}`}>{badgeText}</span>}
-                                                {probText}
-                                            </p>
-                                            <p className="text-xs md:text-sm text-gray-600 mt-1 line-clamp-2 md:line-clamp-1">{issue.solution}</p>
-                                        </div>
-                                    </li>
-                                )})}
+                                        return (
+                                        <li key={idx} className={`flex gap-2 md:gap-3 p-2 md:p-3 rounded-lg border-l-2 ${badgeClass ? badgeClass.replace('bg-', 'border-') : 'border-orange-200 bg-orange-50/50'}`}>
+                                            <div>
+                                                <p className="font-semibold text-gray-800 text-sm md:text-base leading-snug">
+                                                    {badgeText && <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold text-white rounded mr-1.5 align-middle ${badgeClass}`}>{badgeText}</span>}
+                                                    {probText}
+                                                </p>
+                                                <p className="text-xs md:text-sm text-gray-600 mt-1 line-clamp-2 md:line-clamp-1"><strong className="text-beu-teal1 font-medium">Đề xuất: </strong>{issue.solution}</p>
+                                            </div>
+                                        </li>
+                                    )})
+                                )}
+                                {data.issues && filterIssues(data.issues, cardIssueFilter).length > 5 && (
+                                    <div className="text-center mt-2 text-xs font-bold text-beu-teal1 hover:text-beu-teal3 transition-colors">
+                                        + Xem thêm {filterIssues(data.issues, cardIssueFilter).length - 5} vấn đề
+                                    </div>
+                                )}
                             </ul>
                         </div>
                         <div onClick={() => setActiveDetail({ title: 'Kế Hoạch Tiếp Theo', type: 'plans', items: data.nextWeekPlans, key: 'nextWeekPlans' })} className="bg-white rounded-xl p-4 md:p-6 shadow-sm border-l-4 border-l-beu-teal1 hover:shadow-xl cursor-pointer transition-all group">
